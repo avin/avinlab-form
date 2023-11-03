@@ -1,3 +1,3 @@
 import { hello } from '@avinlab/form'
 
-export const helloWorld = `${hello}world`
+export const helloWorld = `${hello}world+++`
