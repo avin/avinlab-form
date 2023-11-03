@@ -1,0 +1,29 @@
+{
+  "name": "root",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "eslint .",
+    "prepare": "simple-git-hooks"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^1.1.0",
+    "eslint": "^8.52.0",
+    "lerna": "^7.4.2",
+    "lint-staged": "^15.0.2",
+    "simple-git-hooks": "^2.9.0"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  },
+  "volta": {
+    "node": "20.9.0",
+    "npm": "10.2.3"
+  }
+}
