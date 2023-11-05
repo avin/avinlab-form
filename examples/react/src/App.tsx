@@ -8,7 +8,9 @@ function App() {
     name2: 'value2',
   });
 
-  const { setValidation, errors, isValid } = useFormValidation(form);
+  const { setValidation, errors, isValid, isValidated } = useFormValidation(form);
+
+  console.log({ isValid, isValidated });
 
   useEffect(() => {
     setValidation((values, prevValues) => {

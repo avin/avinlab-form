@@ -12,5 +12,6 @@ module.exports = {
   },
   rules: {
     '@typescript-eslint/no-unused-vars': [1, { args: 'none', ignoreRestSiblings: true }],
+    '@typescript-eslint/no-empty-interface': 0,
   },
 };
