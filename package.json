@@ -4,14 +4,19 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "apps/*"
+    "examples/*"
   ],
   "scripts": {
     "lint": "eslint .",
-    "prepare": "simple-git-hooks"
+    "preinstall": "npx -y only-allow npm",
+    "prepare": "simple-git-hooks",
+    "build": "lerna run build --ignore examples/**",
+    "watch": "npm run build && lerna watch --ignore examples/** -- npm run build",
+    "dev": "npm run watch"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^1.1.0",
+    "esbuild-plugin-file-path-extensions": "^1.0.0",
     "eslint": "^8.52.0",
     "lerna": "^7.4.2",
     "lint-staged": "^15.0.2",
