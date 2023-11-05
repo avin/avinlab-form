@@ -1,7 +1,7 @@
 import { objectsAreEqual } from './utils/objectsAreEqual';
 import type { Form } from './createForm';
 
-type ValidationFunction = (
+export type ValidationFunction = (
   values: Record<string, any>,
   prevValues: Record<string, any>,
 ) => Record<string, any | undefined>;

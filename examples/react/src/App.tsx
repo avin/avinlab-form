@@ -1,12 +1,5 @@
-import { hello } from '@avinlab/form';
-
 function App() {
-  return (
-    <div>
-      Fooo,
-      {hello}
-    </div>
-  );
+  return <div>Fooo,</div>;
 }
 
 export default App;

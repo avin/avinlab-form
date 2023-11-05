@@ -10,12 +10,13 @@
     "lint": "eslint .",
     "preinstall": "npx -y only-allow npm",
     "prepare": "simple-git-hooks",
-    "build": "lerna run build --ignore examples/**",
-    "watch": "npm run build && lerna watch --ignore examples/** -- npm run build",
+    "build": "lerna run build --ignore example-*",
+    "watch": "npm run build && lerna watch --ignore example-* -- npm run build",
     "dev": "npm run watch",
     "prettier": "prettier **/* --write --ignore-unknown"
   },
   "devDependencies": {
+    "@testing-library/react-hooks": "^8.0.1",
     "@typescript-eslint/eslint-plugin": "^6.9.1",
     "@typescript-eslint/parser": "^6.9.1",
     "esbuild-plugin-file-path-extensions": "^1.0.0",

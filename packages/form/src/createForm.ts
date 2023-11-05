@@ -1,4 +1,4 @@
-type UpdateHandler = (
+export type UpdateHandler = (
   values: Record<string, any>,
   prevValues: Record<string, any>,
 ) => void;
