@@ -7,9 +7,9 @@ type ValidationFunction = (
 ) => Record<string, any | undefined>;
 type ValidateHandler = (errors: Record<string, any>) => void;
 
-interface FormValidation {
+export interface FormValidation {
   _onValidateHandlers: ValidateHandler[];
-  errors: Record<string, any> | undefined;
+  errors: Record<string, any>;
   isValid: boolean;
   _validationFunc: ValidationFunction | null;
   validate: () => void;
@@ -24,7 +24,7 @@ export const createFormValidation = (
 ): FormValidation => {
   const formValidation: FormValidation = {
     _onValidateHandlers: [],
-    errors: undefined,
+    errors: {},
     isValid: true,
     _validationFunc: null,
 
