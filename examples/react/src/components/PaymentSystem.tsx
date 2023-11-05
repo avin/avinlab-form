@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { detectCardType } from '../utils/detectCardType.ts';
 
 interface Props extends React.ComponentPropsWithoutRef<'div'> {
