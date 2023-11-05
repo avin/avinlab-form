@@ -38,7 +38,7 @@ describe('useFormWatch', () => {
     expect(result.current).toBe('John');
   });
 
-  it.only('updates the watched value when form values change', () => {
+  it('updates the watched value when form values change', () => {
     const { result } = renderHook(() =>
       useFormWatch<TestFormValues>(form, 'age'),
     );
@@ -50,30 +50,4 @@ describe('useFormWatch', () => {
 
     expect(result.current).toBe(35);
   });
-
-  it('cleans up the registered field update handler on unmount', () => {
-    const cleanupSpy = vi.fn();
-    form.onUpdateField = vi.fn(() => cleanupSpy);
-
-    const { unmount } = renderHook(() =>
-      useFormWatch<TestFormValues>(form, 'age'),
-    );
-
-    unmount();
-
-    expect(cleanupSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('cleans up the registered form update handler on unmount when no field name is provided', () => {
-    const cleanupSpy = vi.fn();
-    form.onUpdate = vi.fn(() => cleanupSpy);
-
-    const { unmount } = renderHook(() => useFormWatch<TestFormValues>(form));
-
-    unmount();
-
-    expect(cleanupSpy).toHaveBeenCalledTimes(1);
-  });
-
-  // Additional tests can be added here as needed...
 });

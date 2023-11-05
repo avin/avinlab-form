@@ -10,17 +10,14 @@ export const useFormWatch = <T extends Record<string, any>>(
   );
 
   useEffect(() => {
-    const handleUpdate = (
-      newValues: Record<string, any>,
-      prevValues: Record<string, any>,
-    ) => {
-      setValue(fieldName ? newValues[fieldName as string] : newValues);
+    const handleUpdate = (v: any) => {
+      setValue(v);
     };
 
     if (fieldName) {
       form.onUpdateField(fieldName as string, handleUpdate);
     } else {
-      form.onUpdate(handleUpdate as any); // The casting to 'any' might be necessary if onUpdate doesn't expect a handler with two parameters.
+      form.onUpdate(handleUpdate); // The casting to 'any' might be necessary if onUpdate doesn't expect a handler with two parameters.
     }
 
     // Return a cleanup function to unregister the handler
@@ -28,7 +25,7 @@ export const useFormWatch = <T extends Record<string, any>>(
       if (fieldName) {
         form.offUpdateField(fieldName as string, handleUpdate);
       } else {
-        form.offUpdate(handleUpdate as any); // Similarly, casting to 'any' might be necessary here.
+        form.offUpdate(handleUpdate); // Similarly, casting to 'any' might be necessary here.
       }
     };
   }, [fieldName, form]);

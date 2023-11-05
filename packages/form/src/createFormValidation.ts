@@ -8,80 +8,84 @@ export type ValidationFunction = (
 type ValidateHandler = (errors: Record<string, any>) => void;
 
 export interface FormValidation {
-  _onValidateHandlers: ValidateHandler[];
   errors: Record<string, any>;
   isValid: boolean;
-  _validationFunc: ValidationFunction | null;
   validate: () => void;
   setValidation: (validationFunc: ValidationFunction) => void;
   onValidate: (cb: ValidateHandler) => void;
   offValidate: (cb: ValidateHandler) => void;
-  _isValidatedOnce: boolean;
 }
 
 export const createFormValidation = (
   form: Form,
   validationFunc?: ValidationFunction,
 ): FormValidation => {
-  const formValidation: FormValidation = {
-    _onValidateHandlers: [],
-    errors: {},
-    isValid: true,
-    _validationFunc: null,
-    _isValidatedOnce: false,
+  let _onValidateHandlers: ValidateHandler[] = [];
+  let errors: Record<string, any> = {};
+  let isValid = true;
+  let _validationFunc: ValidationFunction | null = null;
+  let _isValidatedOnce = false;
 
-    validate() {
-      if (this._validationFunc) {
-        const newErrors = this._validationFunc(form.values, form._prevValues);
+  const validate = () => {
+    if (_validationFunc) {
+      const newErrors = _validationFunc(form.values, form.prevValues);
 
-        if (typeof newErrors !== 'object' || newErrors === null) {
-          throw new Error('Validation function has to return an object');
-        }
-
-        Object.keys(newErrors).forEach((key) => {
-          if (newErrors[key] === undefined) {
-            delete newErrors[key];
-          }
-        });
-
-        if (
-          !objectsAreEqual(newErrors, this.errors) ||
-          !this._isValidatedOnce
-        ) {
-          this.errors = newErrors;
-          this.isValid = !Object.keys(this.errors).length;
-          this._isValidatedOnce = true;
-
-          this._onValidateHandlers.forEach((cb) => {
-            cb(newErrors);
-          });
-        }
+      if (typeof newErrors !== 'object' || newErrors === null) {
+        throw new Error('Validation function has to return an object');
       }
-    },
 
-    setValidation(validationFunc: ValidationFunction) {
-      this._validationFunc = validationFunc;
-      this.validate();
-    },
+      Object.keys(newErrors).forEach((key) => {
+        if (newErrors[key] === undefined) {
+          delete newErrors[key];
+        }
+      });
 
-    onValidate(cb: ValidateHandler) {
-      this._onValidateHandlers.push(cb);
-    },
+      const shouldUpdateErrors =
+        !objectsAreEqual(newErrors, errors) || !_isValidatedOnce;
 
-    offValidate(cb: ValidateHandler) {
-      this._onValidateHandlers = this._onValidateHandlers.filter(
-        (i) => i !== cb,
-      );
-    },
+      if (shouldUpdateErrors) {
+        errors = newErrors;
+        isValid = !Object.keys(errors).length;
+        _isValidatedOnce = true;
+
+        _onValidateHandlers.forEach((cb) => {
+          cb(newErrors);
+        });
+      }
+    }
+  };
+
+  const setValidation = (validationFunction: ValidationFunction) => {
+    _validationFunc = validationFunction;
+    validate();
+  };
+
+  const onValidate = (cb: ValidateHandler) => {
+    _onValidateHandlers.push(cb);
+  };
+
+  const offValidate = (cb: ValidateHandler) => {
+    _onValidateHandlers = _onValidateHandlers.filter((i) => i !== cb);
   };
 
   if (validationFunc) {
-    formValidation.setValidation(validationFunc);
+    setValidation(validationFunc);
   }
 
   form.onUpdate(() => {
-    formValidation.validate();
+    validate();
   });
 
-  return formValidation;
+  return {
+    validate,
+    setValidation,
+    onValidate,
+    offValidate,
+    get errors() {
+      return errors;
+    },
+    get isValid() {
+      return isValid;
+    },
+  };
 };

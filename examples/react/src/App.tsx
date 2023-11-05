@@ -8,10 +8,10 @@ function App() {
     name2: 'value2',
   });
 
-  const formValidation = useFormValidation(form);
+  const { setValidation, errors, isValid } = useFormValidation(form);
 
   useEffect(() => {
-    formValidation.setValidation((values, prevValues) => {
+    setValidation((values, prevValues) => {
       const errors: Record<string, string> = {};
       if (values.name1.length < minLength) {
         errors.name1 = 'Name1 is too short';
@@ -21,7 +21,7 @@ function App() {
       }
       return errors;
     });
-  }, [minLength, formValidation]);
+  }, [minLength, setValidation]);
 
   // const value1 = useWatch(form, 'name1');
   const value1 = '~';
@@ -34,7 +34,7 @@ function App() {
   console.log('render');
 
   const handleSubmit = () => {
-    if (!formValidation.isValid) {
+    if (!isValid) {
       return;
     }
     console.log(form.values);
@@ -51,9 +51,7 @@ function App() {
               form.setValue('name1', e.currentTarget.value);
             }}
           />
-          <span className="text-red-500 ml-2">
-            {formValidation.errors.name1}
-          </span>
+          <span className="text-red-500 ml-2">{errors.name1}</span>
         </div>
         <div>{value1}</div>
       </div>
@@ -66,13 +64,11 @@ function App() {
               form.setValue('name2', e.currentTarget.value);
             }}
           />
-          <span className="text-red-500 ml-2">
-            {formValidation.errors.name2}
-          </span>
+          <span className="text-red-500 ml-2">{errors.name2}</span>
         </div>
-        <div>{value2}</div>
+        <div>name2: {value2}</div>
       </div>
-      <div>isValid: {String(formValidation.isValid)}</div>
+      <div>isValid: {String(isValid)}</div>
 
       <div>
         minLength: {minLength}{' '}
