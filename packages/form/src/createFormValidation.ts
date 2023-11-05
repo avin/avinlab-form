@@ -16,6 +16,7 @@ export interface FormValidation {
   setValidation: (validationFunc: ValidationFunction) => void;
   onValidate: (cb: ValidateHandler) => void;
   offValidate: (cb: ValidateHandler) => void;
+  _isValidatedOnce: boolean;
 }
 
 export const createFormValidation = (
@@ -27,6 +28,7 @@ export const createFormValidation = (
     errors: {},
     isValid: true,
     _validationFunc: null,
+    _isValidatedOnce: false,
 
     validate() {
       if (this._validationFunc) {
@@ -42,9 +44,13 @@ export const createFormValidation = (
           }
         });
 
-        if (!objectsAreEqual(newErrors, this.errors)) {
+        if (
+          !objectsAreEqual(newErrors, this.errors) ||
+          !this._isValidatedOnce
+        ) {
           this.errors = newErrors;
           this.isValid = !Object.keys(this.errors).length;
+          this._isValidatedOnce = true;
 
           this._onValidateHandlers.forEach((cb) => {
             cb(newErrors);

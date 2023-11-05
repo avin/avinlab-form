@@ -6,7 +6,8 @@
   "author": "Avin Lambrero <avin.github@gmail.com> (https://github.com/avin/)",
   "license": "MIT",
   "keywords": [
-    "form"
+    "form",
+    "react"
   ],
   "exports": {
     ".": {
@@ -28,12 +29,24 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup"
+    "build": "tsup",
+    "test": "vitest"
   },
   "dependencies": {
     "@avinlab/form": "*"
   },
-  "devDependencies": {
-    "tsup": "^7.2.0"
+  "devDependencies": {},
+  "peerDependencies": {
+    "react": "^17.0.0 || ^18.0.0",
+    "react-dom": "^17.0.0 || ^18.0.0",
+    "react-native": "*"
+  },
+  "peerDependenciesMeta": {
+    "react-dom": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    }
   }
 }

@@ -4,20 +4,18 @@ import { createFormValidation } from '@avinlab/form';
 
 export const useFormValidation = (
   form: Form,
-  validationFunc: ValidationFunction,
+  validationFunc?: ValidationFunction,
 ) => {
   const formValidationRef = useRef<FormValidation | null>(null);
   formValidationRef.current =
-    formValidationRef.current || createFormValidation(form, validationFunc);
+    formValidationRef.current || createFormValidation(form);
 
   const formValidation = formValidationRef.current;
 
   const [errors, setErrors] = useState<Record<string, any>>(
     formValidation.errors || {},
   );
-  const [isValidated, setIsValidated] = useState(
-    formValidation.errors === undefined,
-  );
+  const [isValidated, setIsValidated] = useState(false);
 
   useEffect(() => {
     const onValidate = (newErrors: Record<string, any>) => {
@@ -34,7 +32,9 @@ export const useFormValidation = (
   }, [formValidation]);
 
   useEffect(() => {
-    formValidation.setValidation(validationFunc);
+    if (validationFunc) {
+      formValidation.setValidation(validationFunc);
+    }
   }, [formValidation, validationFunc]);
 
   return {
