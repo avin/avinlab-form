@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "preinstall": "npx -y only-allow npm",
     "prepare": "simple-git-hooks",
+    "test": "lerna run test --ignore example-*",
     "build": "lerna run build --ignore example-*",
     "watch": "npm run build && lerna watch --ignore example-* -- npm run build",
     "dev": "npm run watch",
