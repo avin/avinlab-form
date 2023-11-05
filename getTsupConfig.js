@@ -1,4 +1,4 @@
-import { esbuildPluginFilePathExtensions } from 'esbuild-plugin-file-path-extensions'
+import { esbuildPluginFilePathExtensions } from 'esbuild-plugin-file-path-extensions';
 
 export function getConfig(opts) {
   return {
@@ -10,5 +10,5 @@ export function getConfig(opts) {
     sourcemap: true,
     clean: true,
     esbuildPlugins: [esbuildPluginFilePathExtensions({ esmExtension: 'js' })],
-  }
+  };
 }

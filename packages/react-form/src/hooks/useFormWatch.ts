@@ -1,10 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { Form } from '@avinlab/form';
 
-export const useFormWatch = <T extends Record<string, any>>(
-  form: Form,
-  fieldName?: keyof T,
-) => {
+export const useFormWatch = <T extends Record<string, any>>(form: Form, fieldName?: keyof T) => {
   const [value, setValue] = useState<T[keyof T] | T>(
     fieldName ? form.values[fieldName as string] : form.values,
   );

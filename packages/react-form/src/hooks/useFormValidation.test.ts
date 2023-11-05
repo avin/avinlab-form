@@ -33,9 +33,7 @@ describe('useFormValidation', () => {
   });
 
   it('validates fields correctly', () => {
-    const { result } = renderHook(() =>
-      useFormValidation(form, validationFunction),
-    );
+    const { result } = renderHook(() => useFormValidation(form, validationFunction));
 
     act(() => {
       form.setValue('name', ''); // This should trigger a validation error
@@ -51,9 +49,7 @@ describe('useFormValidation', () => {
   });
 
   it('sets initial validation state', () => {
-    const { result } = renderHook(() =>
-      useFormValidation(form, validationFunction),
-    );
+    const { result } = renderHook(() => useFormValidation(form, validationFunction));
 
     // At the initial render, there should be no validation errors
     expect(result.current.errors).toEqual({
@@ -64,9 +60,7 @@ describe('useFormValidation', () => {
   });
 
   it('updates validation state when values change', () => {
-    const { result } = renderHook(() =>
-      useFormValidation(form, validationFunction),
-    );
+    const { result } = renderHook(() => useFormValidation(form, validationFunction));
 
     act(() => {
       form.setValue('name', 'Alice'); // This should be valid

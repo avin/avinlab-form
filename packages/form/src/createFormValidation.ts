@@ -40,8 +40,7 @@ export const createFormValidation = (
         }
       });
 
-      const shouldUpdateErrors =
-        !objectsAreEqual(newErrors, errors) || !_isValidatedOnce;
+      const shouldUpdateErrors = !objectsAreEqual(newErrors, errors) || !_isValidatedOnce;
 
       if (shouldUpdateErrors) {
         errors = newErrors;

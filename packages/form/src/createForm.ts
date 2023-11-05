@@ -1,7 +1,4 @@
-export type UpdateHandler = (
-  values: Record<string, any>,
-  prevValues: Record<string, any>,
-) => void;
+export type UpdateHandler = (values: Record<string, any>, prevValues: Record<string, any>) => void;
 type UpdateFieldHandler = (newValue: any, oldValue: any) => void;
 
 export interface Form {
@@ -47,9 +44,9 @@ export const createForm = (initialValues: Record<string, any>): Form => {
 
   const offUpdateField = (fieldName: string, cb: UpdateFieldHandler) => {
     _onUpdateFieldHandlers[fieldName] = _onUpdateFieldHandlers[fieldName] || [];
-    _onUpdateFieldHandlers[fieldName] = _onUpdateFieldHandlers[
-      fieldName
-    ].filter((handler) => handler !== cb);
+    _onUpdateFieldHandlers[fieldName] = _onUpdateFieldHandlers[fieldName].filter(
+      (handler) => handler !== cb,
+    );
   };
 
   const onUpdate = (cb: UpdateHandler) => {

@@ -2,19 +2,13 @@ import { useRef, useState, useEffect } from 'react';
 import type { Form, FormValidation, ValidationFunction } from '@avinlab/form';
 import { createFormValidation } from '@avinlab/form';
 
-export const useFormValidation = (
-  form: Form,
-  validationFunc?: ValidationFunction,
-) => {
+export const useFormValidation = (form: Form, validationFunc?: ValidationFunction) => {
   const formValidationRef = useRef<FormValidation | null>(null);
-  formValidationRef.current =
-    formValidationRef.current || createFormValidation(form);
+  formValidationRef.current = formValidationRef.current || createFormValidation(form);
 
   const formValidation = formValidationRef.current;
 
-  const [errors, setErrors] = useState<Record<string, any>>(
-    formValidation.errors || {},
-  );
+  const [errors, setErrors] = useState<Record<string, any>>(formValidation.errors || {});
   const [isValidated, setIsValidated] = useState(false);
 
   useEffect(() => {

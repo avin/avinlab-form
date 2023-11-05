@@ -44,6 +44,7 @@ function App() {
     <div className="p-8">
       <div>
         <div>
+          <span className="mr-2">name1:</span>
           <input
             type="text"
             defaultValue={form.values.name1}
@@ -57,6 +58,7 @@ function App() {
       </div>
       <div>
         <div>
+          <span className="mr-2">name2:</span>
           <input
             type="text"
             defaultValue={form.values.name2}

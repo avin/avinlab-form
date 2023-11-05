@@ -36,10 +36,7 @@ describe('createFormValidation', () => {
 
   it('should validate with new values and update errors and validity', () => {
     form.setValue('name', ''); // This should trigger an error
-    expect(validationFunction).toHaveBeenCalledWith(
-      { ...initialValues, name: '' },
-      initialValues,
-    );
+    expect(validationFunction).toHaveBeenCalledWith({ ...initialValues, name: '' }, initialValues);
     expect(formValidation.errors).toEqual({ name: 'Name is required' });
     expect(formValidation.isValid).toBe(false);
   });

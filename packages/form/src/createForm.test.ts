@@ -20,10 +20,7 @@ describe('createForm', () => {
     form.setValue('name', 'Jane');
 
     expect(form.values.name).toBe('Jane');
-    expect(updateHandler).toHaveBeenCalledWith(
-      { ...initialValues, name: 'Jane' },
-      initialValues,
-    );
+    expect(updateHandler).toHaveBeenCalledWith({ ...initialValues, name: 'Jane' }, initialValues);
   });
 
   it('should not call update handlers if value is the same', () => {

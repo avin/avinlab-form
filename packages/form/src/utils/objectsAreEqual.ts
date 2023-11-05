@@ -5,11 +5,7 @@ export function objectsAreEqual(objA: any, objB: any): boolean {
   }
 
   // Проверка наличия объектов и их типов
-  if (
-    !objA ||
-    !objB ||
-    (typeof objA !== 'object' && typeof objB !== 'object')
-  ) {
+  if (!objA || !objB || (typeof objA !== 'object' && typeof objB !== 'object')) {
     return false;
   }
 
