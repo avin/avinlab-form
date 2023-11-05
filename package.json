@@ -25,7 +25,8 @@
     "lerna": "^7.4.2",
     "lint-staged": "^15.0.2",
     "simple-git-hooks": "^2.9.0",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^0.34.6"
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged"
@@ -38,6 +39,7 @@
     "npm": "10.2.3"
   },
   "dependencies": {
+    "jsdom": "^22.1.0",
     "prettier": "^3.0.3"
   }
 }
