@@ -21,8 +21,8 @@ export function FormField({
   rightContent,
   ...props
 }: Props) {
-  // const error = isSubmitted ? errors[name] : '';
-  const error = errors[name];
+  const error = isSubmitted ? errors[name] : '';
+  // const error = errors[name];
 
   const childrenWithProps = React.Children.map(children, (child) => {
     if (React.isValidElement(child)) {
