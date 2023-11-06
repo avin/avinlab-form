@@ -13,7 +13,8 @@
     "test": "lerna run test --ignore example-*",
     "build": "lerna run build --ignore example-*",
     "dev": "lerna run build:dev && lerna watch --ignore example-* -- lerna run build:dev",
-    "prettier": "prettier **/* --write --ignore-unknown"
+    "prettier": "prettier **/* --write --ignore-unknown",
+    "version": "lerna version --no-private"
   },
   "devDependencies": {
     "@testing-library/react": "^14.0.0",
