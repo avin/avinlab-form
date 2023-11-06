@@ -31,5 +31,9 @@
     "build": "cross-env MODE=prod tsup",
     "build:dev": "cross-env MODE=dev tsup",
     "test": "vitest"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "gitHead": "98b2452f398fc913cbc6c0fa6a7183e73d9760d7"
 }
