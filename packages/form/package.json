@@ -1,7 +1,7 @@
 {
   "name": "@avinlab/form",
   "type": "module",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "",
   "author": "Avin Lambrero <avin.github@gmail.com> (https://github.com/avin/)",
   "license": "MIT",
@@ -31,6 +31,5 @@
     "build": "cross-env MODE=prod tsup",
     "build:dev": "cross-env MODE=dev tsup",
     "test": "vitest"
-  },
-  "dependencies": {}
+  }
 }
