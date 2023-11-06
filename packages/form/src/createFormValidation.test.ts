@@ -49,7 +49,6 @@ describe('createFormValidation', () => {
 
   it('should not call validation handlers if errors did not change', () => {
     const onValidateHandler = vi.fn();
-    formValidation.validate();
     formValidation.onValidate(onValidateHandler);
     // Setting value without changing the error state
     form.setValue('age', 20);

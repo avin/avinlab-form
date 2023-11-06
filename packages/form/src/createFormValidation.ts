@@ -56,7 +56,6 @@ export const createFormValidation = (
 
   const setValidation = (validationFunction: ValidationFunction) => {
     _validationFunc = validationFunction;
-    // validate();
   };
 
   const onValidate = (cb: ValidateHandler) => {
@@ -74,6 +73,8 @@ export const createFormValidation = (
   form.onUpdate(() => {
     validate();
   });
+
+  validate();
 
   return {
     validate,
