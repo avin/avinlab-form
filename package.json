@@ -12,8 +12,7 @@
     "prepare": "simple-git-hooks",
     "test": "lerna run test --ignore example-*",
     "build": "lerna run build --ignore example-*",
-    "watch": "npm run build && lerna watch --ignore example-* -- npm run build",
-    "dev": "npm run watch",
+    "dev": "lerna run build:dev && lerna watch --ignore example-* -- lerna run build:dev",
     "prettier": "prettier **/* --write --ignore-unknown"
   },
   "devDependencies": {
@@ -24,16 +23,17 @@
     "eslint": "^8.53.0",
     "eslint-config-alloy": "^5.1.2",
     "eslint-plugin-react": "^7.33.2",
+    "jsdom": "^22.1.0",
     "lerna": "^7.4.2",
     "lint-staged": "^15.0.2",
+    "prettier": "^3.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "simple-git-hooks": "^2.9.0",
+    "tsup": "^7.2.0",
     "typescript": "^5.2.2",
     "vitest": "^0.34.6",
-    "jsdom": "^22.1.0",
-    "prettier": "^3.0.3",
-    "tsup": "^7.2.0"
+    "cross-env": "^7.0.3"
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged"

@@ -28,7 +28,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "cross-env MODE=prod tsup",
+    "build:dev": "cross-env MODE=dev tsup",
     "test": "vitest"
   },
   "dependencies": {}
