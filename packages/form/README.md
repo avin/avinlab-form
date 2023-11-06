@@ -40,7 +40,7 @@ form.offUpdateField('age', handleUpdateAgeField);
 Form validation management:
 
 ```js
-import { createForm } from '@avinlab/form';
+import { createForm, createFormValidation } from '@avinlab/form';
 
 const initialValues = { name: 'John', age: 30 };
 const form = createForm(initialValues);

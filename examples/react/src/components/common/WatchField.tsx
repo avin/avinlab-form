@@ -10,5 +10,6 @@ interface Props {
 
 export function WatchField({ form, name, children }: Props) {
   const val = useFormWatch(form, name);
-  return children(val);
+  const content = children(val) || null;
+  return content;
 }

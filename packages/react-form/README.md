@@ -14,13 +14,17 @@ A React library for building forms with ease, providing hooks for managing form 
 npm install @avinlab/react-form
 ```
 
+### Playground
+
+Online example is [here](https://stackblitz.com/edit/vitejs-vite-4bwk8r?file=src%2Fcomponents%2Fforms%2FCardForm.tsx)
+
 ## Usage
 
 Create form with validation:
 
 ```jsx
 import React from 'react';
-import { useForm, useFormValidation } from '@avinlab/react-form';
+import { useForm, useFormValidation, useFormWatch } from '@avinlab/react-form';
 
 const ExampleForm = () => {
   const form = useForm({ name: 'Bob', age: 20 });
@@ -44,8 +48,8 @@ const ExampleForm = () => {
   };
 
   // If you want to render the form values:
-  // const nameValue = useWatch(form, 'name');
-  // const formValuesObj = useWatch(form);
+  // const nameValue = useFormWatch(form, 'name');
+  // const formValuesObj = useFormWatch(form);
 
   return (
     <form onSubmit={handleSubmit}>
