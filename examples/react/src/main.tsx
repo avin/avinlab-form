@@ -1,5 +1,5 @@
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import CardForm from './components/CardForm.tsx';
+import { App } from './App.tsx';
 
-ReactDOM.createRoot(document.getElementById('root')!).render(<CardForm />);
+ReactDOM.createRoot(document.getElementById('root')!).render(<App />);

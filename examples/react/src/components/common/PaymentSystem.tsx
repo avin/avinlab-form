@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { detectCardType } from '../utils/detectCardType.ts';
+import { detectCardType } from '../../utils/detectCardType.ts';
 
 interface Props extends React.ComponentPropsWithoutRef<'div'> {
   cardNumber: string;

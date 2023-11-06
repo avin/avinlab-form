@@ -1,14 +1,14 @@
 import type { FormEvent } from 'react';
 import cn from 'clsx';
 import React, { useState } from 'react';
-import { PanInput } from './PanInput.tsx';
+import { PanInput } from '../common/PanInput.tsx';
 import { useForm, useFormValidation } from '@avinlab/react-form';
-import ExpiryInput from './ExpiryInput.tsx';
-import { CvcInput } from './CvcInput.tsx';
-import { FormField } from './FormField.tsx';
-import { validateCvc, validateExpiry, validatePan } from '../utils/validators.ts';
-import { PaymentSystem } from './PaymentSystem.tsx';
-import { WatchField } from './WatchField.tsx';
+import ExpiryInput from '../common/ExpiryInput.tsx';
+import { CvcInput } from '../common/CvcInput.tsx';
+import { FormField } from '../common/FormField.tsx';
+import { validateCvc, validateExpiry, validatePan } from '../../utils/validators.ts';
+import { PaymentSystem } from '../common/PaymentSystem.tsx';
+import { WatchField } from '../common/WatchField.tsx';
 
 export function CardForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -18,7 +18,7 @@ export function CardForm() {
     cvc: '',
   });
 
-  const { errors, isValid, isValidated } = useFormValidation(form, (formValues, prevFormValues) => {
+  const { errors, isValid } = useFormValidation(form, (formValues, prevFormValues) => {
     const errors: Record<string, any> = {};
 
     const check = (
@@ -38,6 +38,8 @@ export function CardForm() {
     return errors;
   });
 
+  console.log(errors);
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitted(true);
@@ -46,6 +48,8 @@ export function CardForm() {
       alert(JSON.stringify(form.values, null, 2));
     }
   };
+
+  console.log('render');
 
   return (
     <div className="max-w-md mx-auto my-10">
@@ -94,7 +98,7 @@ export function CardForm() {
             className={cn(
               'bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full mt-4',
               {
-                'opacity-50': !isValidated || !isValid,
+                'opacity-50': !isValid,
               },
             )}
             type="submit"

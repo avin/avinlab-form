@@ -29,11 +29,6 @@ describe('createFormValidation', () => {
     expect(formValidation.isValid).toBe(true);
   });
 
-  it('should set validation function and validate immediately', () => {
-    expect(validationFunction).toHaveBeenCalledWith(initialValues, {});
-    expect(formValidation.isValid).toBe(true); // No errors from initial validation
-  });
-
   it('should validate with new values and update errors and validity', () => {
     form.setValue('name', ''); // This should trigger an error
     expect(validationFunction).toHaveBeenCalledWith({ ...initialValues, name: '' }, initialValues);
@@ -54,6 +49,7 @@ describe('createFormValidation', () => {
 
   it('should not call validation handlers if errors did not change', () => {
     const onValidateHandler = vi.fn();
+    formValidation.validate();
     formValidation.onValidate(onValidateHandler);
     // Setting value without changing the error state
     form.setValue('age', 20);

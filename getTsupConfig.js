@@ -8,7 +8,7 @@ export function getConfig(opts) {
     outDir: 'dist',
     dts: true,
     sourcemap: true,
-    clean: true,
+    // clean: true,
     esbuildPlugins: [esbuildPluginFilePathExtensions({ esmExtension: 'js' })],
   };
 }

@@ -56,7 +56,7 @@ export const createFormValidation = (
 
   const setValidation = (validationFunction: ValidationFunction) => {
     _validationFunc = validationFunction;
-    validate();
+    // validate();
   };
 
   const onValidate = (cb: ValidateHandler) => {
