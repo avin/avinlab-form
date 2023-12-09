@@ -16,6 +16,10 @@ interface CardFormValues {
   cvc: string;
 }
 
+type FormValidationErrors<T> = {
+  [K in keyof T]?: string;
+};
+
 export function CardForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const form = useForm<CardFormValues>({
@@ -25,7 +29,7 @@ export function CardForm() {
   });
 
   const { errors, isValid } = useFormValidation(form, (formValues, prevFormValues) => {
-    const errors: Record<string, any> = {};
+    const errors: FormValidationErrors<CardFormValues> = {};
 
     const check = (
       fieldName: keyof CardFormValues,
