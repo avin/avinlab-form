@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import type { Form, FormValues } from '@avinlab/form';
 
-// Перегрузки функции
+// Overloading functions
 export function useFormWatch<TFormValues extends FormValues, TFieldName extends keyof TFormValues>(
   form: Form<TFormValues>,
   fieldName: TFieldName,
 ): TFormValues[TFieldName];
 export function useFormWatch<TFormValues extends FormValues>(form: Form<TFormValues>): TFormValues;
 
-// Реализация функции
 export function useFormWatch<TFormValues extends FormValues, TFieldName extends keyof TFormValues>(
   form: Form<TFormValues>,
   fieldName?: TFieldName,
