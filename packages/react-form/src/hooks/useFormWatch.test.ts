@@ -11,7 +11,7 @@ interface TestFormValues {
 }
 
 describe('useFormWatch', () => {
-  let form: Form;
+  let form: Form<TestFormValues>;
 
   beforeEach(() => {
     // Setup to initialize 'form' using 'useForm' hook or a mock implementation
@@ -25,19 +25,19 @@ describe('useFormWatch', () => {
   });
 
   it('returns the full form values when no field name is provided', () => {
-    const { result } = renderHook(() => useFormWatch<TestFormValues>(form));
+    const { result } = renderHook(() => useFormWatch(form));
 
     expect(result.current).toEqual({ name: 'John', age: 30 });
   });
 
   it('returns the value for a specific field when field name is provided', () => {
-    const { result } = renderHook(() => useFormWatch<TestFormValues>(form, 'name'));
+    const { result } = renderHook(() => useFormWatch(form, 'name'));
 
     expect(result.current).toBe('John');
   });
 
   it('updates the watched value when form values change', () => {
-    const { result } = renderHook(() => useFormWatch<TestFormValues>(form, 'age'));
+    const { result } = renderHook(() => useFormWatch(form, 'age'));
 
     act(() => {
       // Simulate form value update

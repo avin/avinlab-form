@@ -1,31 +1,44 @@
 import { useState, useEffect } from 'react';
-import type { Form } from '@avinlab/form';
+import type { Form, FormValues } from '@avinlab/form';
 
-export const useFormWatch = <T extends Record<string, any>>(form: Form, fieldName?: keyof T) => {
-  const [value, setValue] = useState<T[keyof T] | T>(
-    fieldName ? form.values[fieldName as string] : form.values,
+// Overloading functions
+export function useFormWatch<TFormValues extends FormValues, TFieldName extends keyof TFormValues>(
+  form: Form<TFormValues>,
+  fieldName: TFieldName,
+): TFormValues[TFieldName];
+export function useFormWatch<TFormValues extends FormValues>(form: Form<TFormValues>): TFormValues;
+
+export function useFormWatch<TFormValues extends FormValues, TFieldName extends keyof TFormValues>(
+  form: Form<TFormValues>,
+  fieldName?: TFieldName,
+) {
+  const [value, setValue] = useState(
+    fieldName !== undefined ? form.values[fieldName] : form.values,
   );
 
   useEffect(() => {
-    const handleUpdate = (v: any) => {
-      setValue(v);
+    const handleUpdate = (newValues: any) => {
+      if (fieldName !== undefined) {
+        setValue(newValues[fieldName]);
+      } else {
+        setValue(newValues);
+      }
     };
 
-    if (fieldName) {
-      form.onUpdateField(fieldName as string, handleUpdate);
+    if (fieldName !== undefined) {
+      form.onUpdateField(fieldName, handleUpdate as any);
     } else {
-      form.onUpdate(handleUpdate); // The casting to 'any' might be necessary if onUpdate doesn't expect a handler with two parameters.
+      form.onUpdate(handleUpdate as any);
     }
 
-    // Return a cleanup function to unregister the handler
     return () => {
-      if (fieldName) {
-        form.offUpdateField(fieldName as string, handleUpdate);
+      if (fieldName !== undefined) {
+        form.offUpdateField(fieldName, handleUpdate as any);
       } else {
-        form.offUpdate(handleUpdate); // Similarly, casting to 'any' might be necessary here.
+        form.offUpdate(handleUpdate as any);
       }
     };
   }, [fieldName, form]);
 
   return value;
-};
+}
