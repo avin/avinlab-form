@@ -10,9 +10,15 @@ import { validateCvc, validateExpiry, validatePan } from '../../utils/validators
 import { PaymentSystem } from '../common/PaymentSystem.tsx';
 import { WatchField } from '../common/WatchField.tsx';
 
+interface CardFormValues {
+  pan: string;
+  expiry: string;
+  cvc: string;
+}
+
 export function CardForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const form = useForm({
+  const form = useForm<CardFormValues>({
     pan: '',
     expiry: '',
     cvc: '',
@@ -22,7 +28,7 @@ export function CardForm() {
     const errors: Record<string, any> = {};
 
     const check = (
-      fieldName: string,
+      fieldName: keyof CardFormValues,
       validationFunc: (v: string) => boolean,
       errorMessage: string,
     ) => {

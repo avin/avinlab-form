@@ -4,10 +4,13 @@ import { useForm } from './useForm'; // Import useForm hook
 import { useFormValidation } from './useFormValidation';
 import type { Form } from '@avinlab/form';
 
-// You may need to mock any additional imports or side effects as necessary.
+interface TestFormValues {
+  name?: string;
+  age?: number;
+}
 
 describe('useFormValidation', () => {
-  let form: Form;
+  let form: Form<TestFormValues>;
 
   // Here's your custom validation function being used as a mock
   const validationFunction = vi.fn((values) => {
@@ -24,7 +27,7 @@ describe('useFormValidation', () => {
   beforeEach(() => {
     // Setup to initialize 'form' using 'useForm' hook
     const initialValues = { name: undefined, age: undefined };
-    const { result: useFormResult } = renderHook(() => useForm(initialValues));
+    const { result: useFormResult } = renderHook(() => useForm<TestFormValues>(initialValues));
     form = useFormResult.current;
   });
 

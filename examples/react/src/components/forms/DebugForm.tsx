@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useForm, useFormValidation, useFormWatch } from '@avinlab/react-form';
 
+interface DebugFormValues {
+  name1: string;
+  name2: string;
+}
+
 export function DebugForm() {
   const [minLength, setMinLength] = useState(2);
-  const form = useForm({
+  const form = useForm<DebugFormValues>({
     name1: 'v13',
     name2: 'value2',
   });
@@ -26,6 +31,8 @@ export function DebugForm() {
   // const value1 = useWatch(form, 'name1');
   const value1 = '~';
   const value2 = useFormWatch(form, 'name2');
+  const values = useFormWatch(form);
+  console.log(values);
   // const value2 = '~';
 
   // const formValues = useFormWatch(form);
