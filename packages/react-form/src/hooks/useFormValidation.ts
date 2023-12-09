@@ -1,10 +1,19 @@
 import { useRef, useState, useEffect } from 'react';
-import type { Form, FormValidation, ValidationFunction } from '@avinlab/form';
+import type {
+  Form,
+  FormValidation,
+  ValidationFunction,
+  FormValues,
+  FormErrors,
+} from '@avinlab/form';
 import { createFormValidation } from '@avinlab/form';
 
-export const useFormValidation = (form: Form, validationFunc: ValidationFunction) => {
+export const useFormValidation = <TFormErrors extends FormErrors, TFormValues extends FormValues>(
+  form: Form<TFormValues>,
+  validationFunc: ValidationFunction<TFormErrors, TFormValues>,
+) => {
   const firstTimeRef = useRef(true);
-  const formValidationRef = useRef<FormValidation | null>(null);
+  const formValidationRef = useRef<FormValidation<TFormErrors, TFormValues> | null>(null);
   formValidationRef.current = formValidationRef.current || createFormValidation(form);
 
   const formValidation = formValidationRef.current!;
@@ -18,7 +27,7 @@ export const useFormValidation = (form: Form, validationFunc: ValidationFunction
   const [, setRenderTick] = useState(0);
 
   useEffect(() => {
-    const onValidate = (newErrors: Record<string, any>) => {
+    const onValidate = () => {
       setRenderTick((v) => v + 1);
     };
 

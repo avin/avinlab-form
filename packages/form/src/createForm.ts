@@ -1,23 +1,46 @@
-export type UpdateHandler = (values: Record<string, any>, prevValues: Record<string, any>) => void;
-type UpdateFieldHandler = (newValue: any, oldValue: any) => void;
+export type FormValues = Record<string, any>;
 
-export interface Form {
-  values: Record<string, any>;
-  prevValues: Record<string, any>;
-  setValue: (fieldName: string, value: any) => void;
-  onUpdateField: (fieldName: string, cb: UpdateFieldHandler) => void;
-  offUpdateField: (fieldName: string, cb: UpdateFieldHandler) => void;
-  onUpdate: (cb: UpdateHandler) => void;
-  offUpdate: (cb: UpdateHandler) => void;
+type FieldUpdateHandlers<T> = {
+  [K in keyof T]?: UpdateFieldHandler<T[K]>[];
+};
+
+export type UpdateHandler<TFormValues extends FormValues> = (
+  values: TFormValues,
+  prevValues: TFormValues,
+) => void;
+type UpdateFieldHandler<T> = (newValue: T, oldValue: T) => void;
+
+export interface Form<TFormValues extends FormValues> {
+  values: TFormValues;
+  prevValues: TFormValues;
+  setValue: <TFieldName extends keyof TFormValues>(
+    fieldName: TFieldName,
+    value: TFormValues[TFieldName],
+  ) => void;
+  onUpdateField: <TFieldName extends keyof TFormValues>(
+    fieldName: TFieldName,
+    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
+  ) => void;
+  offUpdateField: <TFieldName extends keyof TFormValues>(
+    fieldName: TFieldName,
+    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
+  ) => void;
+  onUpdate: (cb: UpdateHandler<TFormValues>) => void;
+  offUpdate: (cb: UpdateHandler<TFormValues>) => void;
 }
 
-export const createForm = (initialValues: Record<string, any>): Form => {
+export const createForm = <TFormValues extends FormValues>(
+  initialValues: TFormValues,
+): Form<TFormValues> => {
   let values = { ...initialValues };
-  let prevValues: Record<string, any> = {};
-  let _onUpdateHandlers: UpdateHandler[] = [];
-  let _onUpdateFieldHandlers: Record<string, UpdateFieldHandler[]> = {};
+  let prevValues: TFormValues = { ...initialValues };
+  let _onUpdateHandlers: UpdateHandler<TFormValues>[] = [];
+  let _onUpdateFieldHandlers: FieldUpdateHandlers<TFormValues> = {};
 
-  const setValue = (fieldName: string, value: any) => {
+  const setValue = <TFieldName extends keyof TFormValues>(
+    fieldName: TFieldName,
+    value: TFormValues[TFieldName],
+  ) => {
     const prevValue = values[fieldName];
 
     if (value !== prevValue) {
@@ -37,23 +60,33 @@ export const createForm = (initialValues: Record<string, any>): Form => {
     }
   };
 
-  const onUpdateField = (fieldName: string, cb: UpdateFieldHandler) => {
-    _onUpdateFieldHandlers[fieldName] = _onUpdateFieldHandlers[fieldName] || [];
-    _onUpdateFieldHandlers[fieldName].push(cb);
+  const onUpdateField = <TFieldName extends keyof TFormValues>(
+    fieldName: TFieldName,
+    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
+  ) => {
+    if (!_onUpdateFieldHandlers[fieldName]) {
+      _onUpdateFieldHandlers[fieldName] = [];
+    }
+    _onUpdateFieldHandlers[fieldName]!.push(cb);
   };
 
-  const offUpdateField = (fieldName: string, cb: UpdateFieldHandler) => {
-    _onUpdateFieldHandlers[fieldName] = _onUpdateFieldHandlers[fieldName] || [];
-    _onUpdateFieldHandlers[fieldName] = _onUpdateFieldHandlers[fieldName].filter(
+  const offUpdateField = <TFieldName extends keyof TFormValues>(
+    fieldName: TFieldName,
+    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
+  ) => {
+    if (!_onUpdateFieldHandlers[fieldName]) {
+      _onUpdateFieldHandlers[fieldName] = [];
+    }
+    _onUpdateFieldHandlers[fieldName] = _onUpdateFieldHandlers[fieldName]!.filter(
       (handler) => handler !== cb,
     );
   };
 
-  const onUpdate = (cb: UpdateHandler) => {
+  const onUpdate = (cb: UpdateHandler<TFormValues>) => {
     _onUpdateHandlers.push(cb);
   };
 
-  const offUpdate = (cb: UpdateHandler) => {
+  const offUpdate = (cb: UpdateHandler<TFormValues>) => {
     _onUpdateHandlers = _onUpdateHandlers.filter((handler) => handler !== cb);
   };
 
