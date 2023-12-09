@@ -1,29 +1,30 @@
 import { objectsAreEqual } from './utils/objectsAreEqual';
-import type { Form } from './createForm';
+import type { Form, FormValues } from './createForm';
 
-export type ValidationFunction = (
-  values: Record<string, any>,
-  prevValues: Record<string, any>,
-) => Record<string, any | undefined>;
+export type ValidationFunction<TFormValues extends FormValues> = (
+  values: TFormValues,
+  prevValues: TFormValues,
+) => Record<keyof TFormValues, any | undefined>;
+
 type ValidateHandler = (errors: Record<string, any>) => void;
 
-export interface FormValidation {
+export interface FormValidation<TFormValues extends FormValues> {
   errors: Record<string, any>;
   isValid: boolean;
   validate: () => void;
-  setValidation: (validationFunc: ValidationFunction) => void;
+  setValidation: (validationFunc: ValidationFunction<TFormValues>) => void;
   onValidate: (cb: ValidateHandler) => void;
   offValidate: (cb: ValidateHandler) => void;
 }
 
-export const createFormValidation = (
-  form: Form,
-  validationFunc?: ValidationFunction,
-): FormValidation => {
+export const createFormValidation = <TFormValues extends FormValues>(
+  form: Form<TFormValues>,
+  validationFunc?: ValidationFunction<TFormValues>,
+): FormValidation<TFormValues> => {
   let _onValidateHandlers: ValidateHandler[] = [];
   let errors: Record<string, any> = {};
   let isValid = true;
-  let _validationFunc: ValidationFunction | null = null;
+  let _validationFunc: ValidationFunction<TFormValues> | null = null;
   let _isValidatedOnce = false;
 
   const validate = () => {
@@ -54,7 +55,7 @@ export const createFormValidation = (
     }
   };
 
-  const setValidation = (validationFunction: ValidationFunction) => {
+  const setValidation = (validationFunction: ValidationFunction<TFormValues>) => {
     _validationFunc = validationFunction;
   };
 
