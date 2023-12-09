@@ -1,13 +1,19 @@
 import { useRef, useState, useEffect } from 'react';
-import type { Form, FormValidation, ValidationFunction, FormValues } from '@avinlab/form';
+import type {
+  Form,
+  FormValidation,
+  ValidationFunction,
+  FormValues,
+  FormErrors,
+} from '@avinlab/form';
 import { createFormValidation } from '@avinlab/form';
 
-export const useFormValidation = <TFormValues extends FormValues>(
+export const useFormValidation = <TFormErrors extends FormErrors, TFormValues extends FormValues>(
   form: Form<TFormValues>,
-  validationFunc: ValidationFunction<TFormValues>,
+  validationFunc: ValidationFunction<TFormErrors, TFormValues>,
 ) => {
   const firstTimeRef = useRef(true);
-  const formValidationRef = useRef<FormValidation<TFormValues> | null>(null);
+  const formValidationRef = useRef<FormValidation<TFormErrors, TFormValues> | null>(null);
   formValidationRef.current = formValidationRef.current || createFormValidation(form);
 
   const formValidation = formValidationRef.current!;

@@ -1,31 +1,35 @@
 import { objectsAreEqual } from './utils/objectsAreEqual';
 import type { Form, FormValues } from './createForm';
 
-export type ValidationFunction<TFormValues extends FormValues> = (
+export type FormErrors = Record<string, any>;
+
+export type ValidationFunction<TFormErrors extends FormErrors, TFormValues extends FormValues> = (
   values: TFormValues,
   prevValues: TFormValues,
-) => Record<keyof TFormValues, any | undefined>;
+) => TFormErrors;
 
-type ValidateHandler = (errors: Record<string, any>) => void;
+type ValidateHandler = (errors: FormErrors) => void;
 
-export interface FormValidation<TFormValues extends FormValues> {
-  errors: Record<string, any>;
+export interface FormValidation<TFormErrors extends FormErrors, TFormValues extends FormValues> {
+  errors: TFormErrors;
   isValid: boolean;
   validate: () => void;
-  setValidation: (validationFunc: ValidationFunction<TFormValues>) => void;
+  setValidation: (validationFunc: ValidationFunction<TFormErrors, TFormValues>) => void;
   onValidate: (cb: ValidateHandler) => void;
   offValidate: (cb: ValidateHandler) => void;
 }
 
-export const createFormValidation = <TFormValues extends FormValues>(
+export const createFormValidation = <
+  TFormErrors extends FormErrors,
+  TFormValues extends FormValues,
+>(
   form: Form<TFormValues>,
-  validationFunc?: ValidationFunction<TFormValues>,
-): FormValidation<TFormValues> => {
+  validationFunc?: ValidationFunction<TFormErrors, TFormValues>,
+): FormValidation<TFormErrors, TFormValues> => {
   let _onValidateHandlers: ValidateHandler[] = [];
-  let errors: Record<string, any> = {};
+  let errors: TFormErrors;
   let isValid = true;
-  let _validationFunc: ValidationFunction<TFormValues> | null = null;
-  let _isValidatedOnce = false;
+  let _validationFunc: ValidationFunction<TFormErrors, TFormValues> | null = null;
 
   const validate = () => {
     if (_validationFunc) {
@@ -41,12 +45,11 @@ export const createFormValidation = <TFormValues extends FormValues>(
         }
       });
 
-      const shouldUpdateErrors = !objectsAreEqual(newErrors, errors) || !_isValidatedOnce;
+      const shouldUpdateErrors = !objectsAreEqual(newErrors, errors);
 
       if (shouldUpdateErrors) {
         errors = newErrors;
         isValid = !Object.keys(errors).length;
-        _isValidatedOnce = true;
 
         _onValidateHandlers.forEach((cb) => {
           cb(newErrors);
@@ -55,7 +58,7 @@ export const createFormValidation = <TFormValues extends FormValues>(
     }
   };
 
-  const setValidation = (validationFunction: ValidationFunction<TFormValues>) => {
+  const setValidation = (validationFunction: ValidationFunction<TFormErrors, TFormValues>) => {
     _validationFunc = validationFunction;
   };
 

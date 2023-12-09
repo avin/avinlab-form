@@ -31,8 +31,6 @@ export function DebugForm() {
   // const value1 = useWatch(form, 'name1');
   const value1 = '~';
   const value2 = useFormWatch(form, 'name2');
-  const values = useFormWatch(form);
-  console.log(values);
   // const value2 = '~';
 
   // const formValues = useFormWatch(form);
