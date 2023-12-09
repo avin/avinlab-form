@@ -17,25 +17,21 @@ export function useFormWatch<TFormValues extends FormValues, TFieldName extends 
   );
 
   useEffect(() => {
-    const handleUpdate = (newValues: any) => {
-      if (fieldName !== undefined) {
-        setValue(newValues[fieldName]);
-      } else {
-        setValue(newValues);
-      }
+    const handleUpdate = (v: any) => {
+      setValue(v);
     };
 
     if (fieldName !== undefined) {
-      form.onUpdateField(fieldName, handleUpdate as any);
+      form.onUpdateField(fieldName, handleUpdate);
     } else {
-      form.onUpdate(handleUpdate as any);
+      form.onUpdate(handleUpdate);
     }
 
     return () => {
       if (fieldName !== undefined) {
-        form.offUpdateField(fieldName, handleUpdate as any);
+        form.offUpdateField(fieldName, handleUpdate);
       } else {
-        form.offUpdate(handleUpdate as any);
+        form.offUpdate(handleUpdate);
       }
     };
   }, [fieldName, form]);
