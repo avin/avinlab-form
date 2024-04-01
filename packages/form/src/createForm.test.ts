@@ -3,7 +3,7 @@ import type { Form } from './createForm';
 import { createForm } from './createForm';
 
 describe('createForm', () => {
-  let form: Form;
+  let form: Form<{ name: string; age: number }>;
   const initialValues = { name: 'John', age: 30 };
 
   beforeEach(() => {
@@ -37,6 +37,39 @@ describe('createForm', () => {
     form.setValue('age', 31);
 
     expect(fieldUpdateHandler).toHaveBeenCalledWith(31, 30);
+  });
+
+  it('should call field-specific update handlers and full update handlers on update all form values', () => {
+    const ageUpdateHandler = vi.fn();
+    const nameUpdateHandler = vi.fn();
+    const fullFormUpdateHandler = vi.fn();
+    form.onUpdateField('age', ageUpdateHandler);
+    form.onUpdateField('name', nameUpdateHandler);
+    form.onUpdate(fullFormUpdateHandler);
+
+    form.setValues({ ...initialValues, age: 31 });
+
+    expect(ageUpdateHandler).toHaveBeenCalledWith(31, 30);
+    expect(fullFormUpdateHandler).toHaveBeenCalledWith(
+      { ...initialValues, age: 31 },
+      initialValues,
+    );
+    expect(nameUpdateHandler).not.toHaveBeenCalled();
+  });
+
+  it('should not call any updates handlers if nothing changed', () => {
+    const ageUpdateHandler = vi.fn();
+    const nameUpdateHandler = vi.fn();
+    const fullFormUpdateHandler = vi.fn();
+    form.onUpdateField('age', ageUpdateHandler);
+    form.onUpdateField('name', nameUpdateHandler);
+    form.onUpdate(fullFormUpdateHandler);
+
+    form.setValues({ ...initialValues });
+
+    expect(ageUpdateHandler).not.toHaveBeenCalled();
+    expect(fullFormUpdateHandler).not.toHaveBeenCalled();
+    expect(nameUpdateHandler).not.toHaveBeenCalled();
   });
 
   it('should correctly remove update handlers', () => {
