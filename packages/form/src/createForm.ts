@@ -1,3 +1,5 @@
+import { objectsAreEqual } from './utils/objectsAreEqual';
+
 export type FormValues = Record<string, any>;
 
 type FieldUpdateHandlers<T> = {
@@ -17,6 +19,7 @@ export interface Form<TFormValues extends FormValues> {
     fieldName: TFieldName,
     value: TFormValues[TFieldName],
   ) => void;
+  setValues: (values: TFormValues) => void;
   onUpdateField: <TFieldName extends keyof TFormValues>(
     fieldName: TFieldName,
     cb: UpdateFieldHandler<TFormValues[TFieldName]>,
@@ -60,6 +63,31 @@ export const createForm = <TFormValues extends FormValues>(
     }
   };
 
+  const setValues = (newValues: TFormValues) => {
+    if (objectsAreEqual(newValues, prevValues)) {
+      return;
+    }
+
+    prevValues = { ...values };
+    values = { ...newValues };
+
+    _onUpdateHandlers.forEach((cb) => {
+      cb(values, prevValues);
+    });
+
+    Object.keys(_onUpdateFieldHandlers).forEach((fieldName) => {
+      if (prevValues[fieldName] !== values[fieldName]) {
+        (_onUpdateFieldHandlers[fieldName] || []).forEach((cb) => {
+          cb(values[fieldName], prevValues[fieldName]);
+        });
+      }
+    });
+
+    _onUpdateHandlers.forEach((cb) => {
+      cb(values, prevValues);
+    });
+  };
+
   const onUpdateField = <TFieldName extends keyof TFormValues>(
     fieldName: TFieldName,
     cb: UpdateFieldHandler<TFormValues[TFieldName]>,
@@ -98,6 +126,7 @@ export const createForm = <TFormValues extends FormValues>(
       return prevValues;
     },
     setValue,
+    setValues,
     onUpdateField,
     offUpdateField,
     onUpdate,

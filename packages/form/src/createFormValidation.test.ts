@@ -4,9 +4,14 @@ import { createForm } from './createForm';
 import type { FormValidation } from './createFormValidation';
 import { createFormValidation } from './createFormValidation';
 
+interface FormFields {
+  name: string;
+  age: number;
+}
+
 describe('createFormValidation', () => {
-  let form: Form;
-  let formValidation: FormValidation;
+  let form: Form<FormFields>;
+  let formValidation: FormValidation<any, FormFields>;
   const initialValues = { name: 'John', age: 30 };
   const validationFunction = vi.fn((values) => {
     const errors: Record<string, any> = {};
