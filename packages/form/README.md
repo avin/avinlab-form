@@ -32,6 +32,9 @@ form.onUpdateField('age', handleUpdateAgeField);
 form.setValue('name', 'Jane');
 form.setValue('age', 31);
 
+// Set all form values at once
+form.setValues({ name: 'Jane', age: 31 });
+
 // Unsubscribe from updates
 form.offUpdate(handleUpdateForm);
 form.offUpdateField('age', handleUpdateAgeField);

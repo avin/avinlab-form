@@ -89,6 +89,18 @@ export function DebugForm() {
         </button>
       </div>
 
+      <button
+        className="btn"
+        onClick={() => {
+          form.setValues({ name1: 'xx', name2: 'yyyy' });
+        }}
+      >
+        SetValues({JSON.stringify({ name1: 'xx', name2: 'yyyy' })})
+      </button>
+
+      <br />
+      <br />
+
       <button className="btn" onClick={handleSubmit}>
         Submit
       </button>
