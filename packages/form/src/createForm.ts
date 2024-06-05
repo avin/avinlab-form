@@ -64,11 +64,12 @@ export const createForm = <TFormValues extends FormValues>(
   };
 
   const setValues = (newValues: TFormValues) => {
+    prevValues = { ...values };
+
     if (objectsAreEqual(newValues, prevValues)) {
       return;
     }
 
-    prevValues = { ...values };
     values = { ...newValues };
 
     _onUpdateHandlers.forEach((cb) => {
