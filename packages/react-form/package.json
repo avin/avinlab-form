@@ -1,7 +1,7 @@
 {
   "name": "@avinlab/react-form",
   "type": "module",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "",
   "author": "Avin Lambrero <avin.github@gmail.com> (https://github.com/avin/)",
   "license": "MIT",
@@ -34,7 +34,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@avinlab/form": "^0.3.0"
+    "@avinlab/form": "^0.3.1"
   },
   "peerDependencies": {
     "react": "^17.0.0 || ^18.0.0",
