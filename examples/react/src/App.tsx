@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import cn from 'clsx';
 import { CardForm } from './components/forms/CardForm.tsx';
 import { DebugForm } from './components/forms/DebugForm.tsx';
+import { HelperForm } from './components/forms/HelperForm.tsx';
 import { getQueryParamByName, setQueryParam } from './utils/queryParam.ts';
 
 const forms = [
@@ -13,6 +14,10 @@ const forms = [
     label: 'Debug Form',
     key: 'debug',
   },
+  {
+    label: 'Helper Form',
+    key: 'helper',
+  },
 ];
 
 export function App() {
@@ -21,6 +26,7 @@ export function App() {
   const FormComponent = {
     card: CardForm,
     debug: DebugForm,
+    helper: HelperForm,
   }[currentForm]!;
 
   useEffect(() => {
