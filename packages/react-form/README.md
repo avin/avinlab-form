@@ -78,3 +78,51 @@ const ExampleForm = () => {
 ### Examples
 
 For more advanced examples, check out the [example directory](../../examples/react).
+
+### Creating controlled components faster
+
+You can use `createFormComponent` helper to quickly bind form fields to the form state:
+
+```jsx
+import { createFormComponent, useForm } from '@avinlab/react-form';
+
+const TextInput = ({ label, ...props }) => (
+  <label className="block">
+    <span className="block text-sm font-semibold text-gray-700 mb-1">{label}</span>
+    <input className="input w-full" {...props} />
+  </label>
+);
+
+const FormTextInput = createFormComponent(TextInput, {
+  getValue: (event) => event.currentTarget.value,
+});
+
+const CheckboxInput = ({ label, ...props }) => (
+  <label className="inline-flex items-center space-x-2">
+    <input type="checkbox" {...props} />
+    <span>{label}</span>
+  </label>
+);
+
+const FormCheckboxInput = createFormComponent(CheckboxInput, {
+  valueAttrName: 'checked',
+  getValue: (event) => event.target.checked,
+});
+
+export function ProfileForm() {
+  const form = useForm({ email: '', accepted: false });
+
+  return (
+    <form className="space-y-4">
+      <FormTextInput form={form} name="email" label="Email" placeholder="john@doe.com" />
+      <FormCheckboxInput form={form} name="accepted" label="I agree with the terms" />
+    </form>
+  );
+}
+```
+
+`createFormComponent` accepts an optional options object as a second argument:
+
+- `valueAttrName` – name of the prop that receives the form value (defaults to `"value"`).
+- `onChangeAttrName` – name of the change handler prop (defaults to `"onChange"`).
+- `getValue(event)` – function that extracts the value to store in the form. By default it simply returns whatever is passed as the first argument of the `onChange` handler.
