@@ -1,17 +1,20 @@
 import React from 'react';
-import type { Form } from '@avinlab/form';
+import type { Form, FormValues } from '@avinlab/form';
 import cn from 'clsx';
 
-interface Props extends React.PropsWithChildren<{}> {
+type FormFieldErrors<TFormValues extends FormValues> = Partial<Record<keyof TFormValues, string>>;
+
+interface Props<TFormValues extends FormValues, TFieldName extends keyof TFormValues>
+  extends React.PropsWithChildren<{}> {
   label: React.ReactNode;
-  form: Form;
-  errors: Record<string, any>;
-  name: string;
+  form: Form<TFormValues>;
+  errors: FormFieldErrors<TFormValues>;
+  name: TFieldName;
   isSubmitted: boolean;
   rightContent?: React.ReactNode;
 }
 
-export function FormField({
+export function FormField<TFormValues extends FormValues, TFieldName extends keyof TFormValues>({
   isSubmitted,
   label,
   form,
@@ -20,16 +23,16 @@ export function FormField({
   children,
   rightContent,
   ...props
-}: Props) {
+}: Props<TFormValues, TFieldName>) {
   const error = isSubmitted ? errors[name] : '';
   // const error = errors[name];
 
   const childrenWithProps = React.Children.map(children, (child) => {
     if (React.isValidElement(child)) {
       return React.cloneElement(child as React.ReactElement<any>, {
-        name: name,
-        onChange: (v: string) => {
-          form.setValue(name, v);
+        name: String(name),
+        onChange: (fieldValue: TFormValues[TFieldName]) => {
+          form.setValue(name, fieldValue);
         },
         defaultValue: form.values[name] || '',
         className: cn(child.props.className, {
