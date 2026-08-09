@@ -27,7 +27,7 @@ npm install @avinlab/form
   committed snapshot.
 - `subscribe` and `subscribeField` use set semantics and return idempotent cleanup functions.
   Adding or removing listeners during dispatch affects the next commit, not the captured current
-  cycle. `onUpdate`/`offUpdate` and their field variants remain as legacy migration helpers.
+  cycle.
 - Snapshots are shallow-frozen in development and readonly in TypeScript. Nested field values are
   not cloned or deeply frozen: replace a nested value through `setValue` instead of mutating it.
 
@@ -97,4 +97,3 @@ commits.
 
 The complete, strictly compiled controller and validation recipe lives in
 [`examples/react/src/documentationRecipes.tsx`](../../examples/react/src/documentationRecipes.tsx).
-See the repository [migration notes](../../MIGRATION.md) before upgrading.

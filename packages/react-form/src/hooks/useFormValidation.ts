@@ -122,12 +122,6 @@ const createReactFormValidation = <
     validate,
     setValidation,
     subscribe,
-    onValidate(listener) {
-      subscribe(listener);
-    },
-    offValidate(listener) {
-      listeners.delete(listener);
-    },
     dispose() {
       if (isDisposed) {
         return;
@@ -173,8 +167,6 @@ const useValidationView = <TFormErrors extends FormErrors, TFormValues extends F
       validate: validation.validate,
       setValidation: validation.setValidation,
       subscribe: validation.subscribe,
-      onValidate: validation.onValidate,
-      offValidate: validation.offValidate,
       dispose: validation.dispose,
       get errors() {
         return this.snapshot.errors;

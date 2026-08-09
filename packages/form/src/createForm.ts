@@ -26,25 +26,11 @@ export interface Form<TFormValues extends FormValues> {
     fieldName: TFieldName,
     cb: UpdateFieldHandler<TFormValues[TFieldName]>,
   ) => Unsubscribe;
-  /** @deprecated Prefer `subscribeField`, which returns its cleanup function. */
-  onUpdateField: <TFieldName extends keyof TFormValues>(
-    fieldName: TFieldName,
-    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
-  ) => void;
-  /** @deprecated Keep the cleanup returned by `subscribeField` instead. */
-  offUpdateField: <TFieldName extends keyof TFormValues>(
-    fieldName: TFieldName,
-    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
-  ) => void;
   /**
    * Subscribes to successful form commits. Listener membership is captured at the start of each
    * commit, so subscription changes during notification apply to the next commit.
    */
   subscribe: (cb: UpdateHandler<TFormValues>) => Unsubscribe;
-  /** @deprecated Prefer `subscribe`, which returns its cleanup function. */
-  onUpdate: (cb: UpdateHandler<TFormValues>) => void;
-  /** @deprecated Keep the cleanup returned by `subscribe` instead. */
-  offUpdate: (cb: UpdateHandler<TFormValues>) => void;
 }
 
 export const createForm = <TFormValues extends FormValues>(
@@ -59,8 +45,8 @@ export const createForm = <TFormValues extends FormValues>(
 
   let values = createSnapshot(initialValues);
   let prevValues = createSnapshot(initialValues);
-  const _onUpdateHandlers = new Set<UpdateHandler<TFormValues>>();
-  const _onUpdateFieldHandlers = new Map<string, Set<UpdateFieldHandler<any>>>();
+  const updateHandlers = new Set<UpdateHandler<TFormValues>>();
+  const fieldUpdateHandlers = new Map<string, Set<UpdateFieldHandler<any>>>();
   const normalizeFieldName = (fieldName: keyof TFormValues) => String(fieldName);
   const updateQueue: Array<(currentValues: FormSnapshot<TFormValues>) => TFormValues> = [];
   let isProcessingUpdates = false;
@@ -130,10 +116,10 @@ export const createForm = <TFormValues extends FormValues>(
       (fieldName) =>
         [
           fieldName,
-          [...(_onUpdateFieldHandlers.get(normalizeFieldName(fieldName)) || [])],
+          [...(fieldUpdateHandlers.get(normalizeFieldName(fieldName)) || [])],
         ] as const,
     );
-    const formUpdateHandlers = [..._onUpdateHandlers];
+    const formUpdateHandlers = [...updateHandlers];
     prevValues = committedPrevValues;
     values = committedValues;
     const listenerFailures: unknown[] = [];
@@ -177,47 +163,25 @@ export const createForm = <TFormValues extends FormValues>(
     cb: UpdateFieldHandler<TFormValues[TFieldName]>,
   ) => {
     const normalizedFieldName = normalizeFieldName(fieldName);
-    let handlers = _onUpdateFieldHandlers.get(normalizedFieldName);
+    let handlers = fieldUpdateHandlers.get(normalizedFieldName);
 
     if (!handlers) {
       handlers = new Set();
-      _onUpdateFieldHandlers.set(normalizedFieldName, handlers);
+      fieldUpdateHandlers.set(normalizedFieldName, handlers);
     }
     handlers.add(cb);
 
     return () => {
-      _onUpdateFieldHandlers.get(normalizedFieldName)?.delete(cb);
+      fieldUpdateHandlers.get(normalizedFieldName)?.delete(cb);
     };
-  };
-
-  const onUpdateField = <TFieldName extends keyof TFormValues>(
-    fieldName: TFieldName,
-    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
-  ) => {
-    subscribeField(fieldName, cb);
-  };
-
-  const offUpdateField = <TFieldName extends keyof TFormValues>(
-    fieldName: TFieldName,
-    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
-  ) => {
-    _onUpdateFieldHandlers.get(normalizeFieldName(fieldName))?.delete(cb);
   };
 
   const subscribe = (cb: UpdateHandler<TFormValues>) => {
-    _onUpdateHandlers.add(cb);
+    updateHandlers.add(cb);
 
     return () => {
-      _onUpdateHandlers.delete(cb);
+      updateHandlers.delete(cb);
     };
-  };
-
-  const onUpdate = (cb: UpdateHandler<TFormValues>) => {
-    subscribe(cb);
-  };
-
-  const offUpdate = (cb: UpdateHandler<TFormValues>) => {
-    _onUpdateHandlers.delete(cb);
   };
 
   return {
@@ -230,10 +194,6 @@ export const createForm = <TFormValues extends FormValues>(
     setValue,
     setValues,
     subscribeField,
-    onUpdateField,
-    offUpdateField,
     subscribe,
-    onUpdate,
-    offUpdate,
   };
 };
