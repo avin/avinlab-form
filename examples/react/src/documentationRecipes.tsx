@@ -3,9 +3,9 @@ import { createForm, createFormValidation, type Form } from '@avinlab/form';
 import {
   createFormComponent,
   useForm,
-  useFormIsValid,
   useFormValidation,
   useFormValidationError,
+  useFormValidationState,
   useFormWatch,
 } from '@avinlab/react-form';
 
@@ -151,6 +151,6 @@ export function AgeError({ form }: { form: Form<ProfileValues> }) {
 }
 
 export function SubmitButton({ form }: { form: Form<ProfileValues> }) {
-  const isValid = useFormIsValid<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <button disabled={!isValid}>Save</button>;
+  const state = useFormValidationState<ProfileErrors, ProfileValues>(form, validateProfile);
+  return <button disabled={state !== 'valid'}>Save</button>;
 }

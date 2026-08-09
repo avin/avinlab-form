@@ -1,4 +1,4 @@
-# Migration to the stable controller contract
+# Migration to 0.5
 
 The controller remains mutable and retains its identity. The changes below make snapshot and
 subscription behavior explicit; TypeScript consumers should treat the readonly and stricter
@@ -45,3 +45,14 @@ unsubscribeField();
 The returned functions are idempotent. Existing `onUpdate`/`offUpdate`, `onUpdateField`/
 `offUpdateField`, and `onValidate`/`offValidate` pairs remain available for migration, but require
 retaining the original callback. Dispose validation controllers when their owning lifecycle ends.
+
+## Explicit validation state
+
+Boolean validity has been replaced by the explicit `ValidationState` union: `unvalidated`, `valid`,
+or `invalid`. Replace `validation.isValid` with `validation.state === 'valid'`, or use an exhaustive
+switch when all lifecycle outcomes matter. An empty error object while `unvalidated` does not mean
+the form passed validation.
+
+The React `useFormIsValid(form, validator)` hook was removed. Replace it with
+`useFormValidationState(form, validator)` and compare its result with `valid`. The complete
+`useFormValidation` facade exposes the same `state` property as the core controller.

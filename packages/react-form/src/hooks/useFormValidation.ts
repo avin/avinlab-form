@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSyncExternalStore } from 'use-sync-external-store/shim';
 import type {
   Form,
@@ -6,14 +6,36 @@ import type {
   ValidationFunction,
   FormValues,
   FormErrors,
+  ValidationState,
 } from '@avinlab/form';
 import { createFormValidation } from '@avinlab/form';
 
 type ValidationListener<TFormErrors extends FormErrors> = (errors: Readonly<TFormErrors>) => void;
 
+interface ValidationSnapshot<TFormErrors extends FormErrors> {
+  readonly errors: Readonly<TFormErrors>;
+  readonly state: ValidationState;
+}
+
+const emptyErrors = Object.freeze({});
+const unvalidatedSnapshot = Object.freeze({
+  errors: emptyErrors,
+  state: 'unvalidated',
+});
+
+const getUnvalidatedSnapshot = <TFormErrors extends FormErrors>() =>
+  unvalidatedSnapshot as ValidationSnapshot<TFormErrors>;
+
 interface ReactFormValidation<TFormErrors extends FormErrors, TFormValues extends FormValues>
   extends FormValidation<TFormErrors, TFormValues> {
+  readonly snapshot: ValidationSnapshot<TFormErrors>;
   connect: (form: Form<TFormValues>) => () => void;
+  hasSnapshotFor: (form: Form<TFormValues>) => boolean;
+}
+
+interface ValidationView<TFormErrors extends FormErrors, TFormValues extends FormValues>
+  extends FormValidation<TFormErrors, TFormValues> {
+  readonly snapshot: ValidationSnapshot<TFormErrors>;
 }
 
 const createReactFormValidation = <
@@ -21,20 +43,25 @@ const createReactFormValidation = <
   TFormValues extends FormValues,
 >(): ReactFormValidation<TFormErrors, TFormValues> => {
   const listeners = new Set<ValidationListener<TFormErrors>>();
-  let errors = Object.freeze({}) as Readonly<TFormErrors>;
-  let isValid = true;
+  let snapshot = getUnvalidatedSnapshot<TFormErrors>();
+  let committedForm: Form<TFormValues> | null = null;
   let controller: FormValidation<TFormErrors, TFormValues> | null = null;
   let disconnectController = () => {};
   let isDisposed = false;
 
   const publishControllerSnapshot = () => {
-    if (!controller || (Object.is(errors, controller.errors) && isValid === controller.isValid)) {
+    if (
+      !controller ||
+      (Object.is(snapshot.errors, controller.errors) && snapshot.state === controller.state)
+    ) {
       return;
     }
 
-    errors = controller.errors;
-    isValid = controller.isValid;
-    [...listeners].forEach((listener) => listener(errors));
+    snapshot = Object.freeze({
+      errors: controller.errors,
+      state: controller.state,
+    });
+    [...listeners].forEach((listener) => listener(snapshot.errors));
   };
 
   const disconnect = () => {
@@ -48,7 +75,9 @@ const createReactFormValidation = <
       return () => {};
     }
 
+    disconnectController();
     const nextController = createFormValidation<TFormErrors, TFormValues>(form);
+    committedForm = form;
     controller = nextController;
     const unsubscribeValidation = nextController.subscribe(publishControllerSnapshot);
     disconnectController = () => {
@@ -59,6 +88,8 @@ const createReactFormValidation = <
         controller = null;
       }
     };
+
+    publishControllerSnapshot();
 
     return disconnectController;
   };
@@ -87,6 +118,7 @@ const createReactFormValidation = <
 
   return {
     connect,
+    hasSnapshotFor: (form) => isDisposed || committedForm === form,
     validate,
     setValidation,
     subscribe,
@@ -106,18 +138,21 @@ const createReactFormValidation = <
       listeners.clear();
     },
     get errors() {
-      return errors;
+      return snapshot.errors;
     },
-    get isValid() {
-      return isValid;
+    get state() {
+      return snapshot.state;
+    },
+    get snapshot() {
+      return snapshot;
     },
   };
 };
 
-const useValidationController = <TFormErrors extends FormErrors, TFormValues extends FormValues>(
-  form: Form<TFormValues>,
-  validationFunc: ValidationFunction<TFormErrors, TFormValues>,
-) => {
+const useValidationController = <
+  TFormErrors extends FormErrors,
+  TFormValues extends FormValues,
+>() => {
   const validationRef = useRef<ReactFormValidation<TFormErrors, TFormValues> | null>(null);
 
   if (!validationRef.current) {
@@ -126,11 +161,35 @@ const useValidationController = <TFormErrors extends FormErrors, TFormValues ext
 
   const validation = validationRef.current;
 
-  useEffect(() => validation.connect(form), [form, validation]);
-  useEffect(() => validation.setValidation(validationFunc), [form, validation, validationFunc]);
-
   return validation;
 };
+
+const useValidationView = <TFormErrors extends FormErrors, TFormValues extends FormValues>(
+  validation: ReactFormValidation<TFormErrors, TFormValues>,
+  form: Form<TFormValues>,
+): ValidationView<TFormErrors, TFormValues> =>
+  useMemo(
+    () => ({
+      validate: validation.validate,
+      setValidation: validation.setValidation,
+      subscribe: validation.subscribe,
+      onValidate: validation.onValidate,
+      offValidate: validation.offValidate,
+      dispose: validation.dispose,
+      get errors() {
+        return this.snapshot.errors;
+      },
+      get state() {
+        return this.snapshot.state;
+      },
+      get snapshot() {
+        return validation.hasSnapshotFor(form)
+          ? validation.snapshot
+          : getUnvalidatedSnapshot<TFormErrors>();
+      },
+    }),
+    [form, validation],
+  );
 
 const useValidationSelector = <
   TSelected,
@@ -139,28 +198,31 @@ const useValidationSelector = <
 >(
   form: Form<TFormValues>,
   validationFunc: ValidationFunction<TFormErrors, TFormValues>,
-  selector: (validation: FormValidation<TFormErrors, TFormValues>) => TSelected,
+  selector: (validation: ValidationView<TFormErrors, TFormValues>) => TSelected,
 ) => {
-  const validation = useValidationController(form, validationFunc);
+  const validation = useValidationController<TFormErrors, TFormValues>();
+  const view = useValidationView(validation, form);
   const subscribe = useCallback(
     (onStoreChange: () => void) => validation.subscribe(onStoreChange),
     [validation],
   );
-  const getSnapshot = useCallback(() => selector(validation), [selector, validation]);
+  const getSnapshot = useCallback(() => selector(view), [selector, view]);
   const selected = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  useEffect(() => validation.connect(form), [form, validation]);
+  useEffect(() => validation.setValidation(validationFunc), [form, validation, validationFunc]);
 
-  return [validation, selected] as const;
+  return [view, selected] as const;
 };
 
 export const useFormValidation = <TFormErrors extends FormErrors, TFormValues extends FormValues>(
   form: Form<TFormValues>,
   validationFunc: ValidationFunction<TFormErrors, TFormValues>,
 ): FormValidation<TFormErrors, TFormValues> => {
-  const selectErrors = useCallback(
-    (validation: FormValidation<TFormErrors, TFormValues>) => validation.errors,
+  const selectSnapshot = useCallback(
+    (validation: ValidationView<TFormErrors, TFormValues>) => validation.snapshot,
     [],
   );
-  const [validation] = useValidationSelector(form, validationFunc, selectErrors);
+  const [validation] = useValidationSelector(form, validationFunc, selectSnapshot);
 
   return validation;
 };
@@ -175,7 +237,7 @@ export const useFormValidationError = <
   fieldName: TFieldName,
 ): TFormErrors[TFieldName] | undefined => {
   const selectError = useCallback(
-    (validation: FormValidation<TFormErrors, TFormValues>) => validation.errors[fieldName],
+    (validation: ValidationView<TFormErrors, TFormValues>) => validation.errors[fieldName],
     [fieldName],
   );
   const [, error] = useValidationSelector(form, validationFunc, selectError);
@@ -183,15 +245,18 @@ export const useFormValidationError = <
   return error;
 };
 
-export const useFormIsValid = <TFormErrors extends FormErrors, TFormValues extends FormValues>(
+export const useFormValidationState = <
+  TFormErrors extends FormErrors,
+  TFormValues extends FormValues,
+>(
   form: Form<TFormValues>,
   validationFunc: ValidationFunction<TFormErrors, TFormValues>,
-) => {
-  const selectIsValid = useCallback(
-    (validation: FormValidation<TFormErrors, TFormValues>) => validation.isValid,
+): ValidationState => {
+  const selectState = useCallback(
+    (validation: ValidationView<TFormErrors, TFormValues>) => validation.state,
     [],
   );
-  const [, isValid] = useValidationSelector(form, validationFunc, selectIsValid);
+  const [, state] = useValidationSelector(form, validationFunc, selectState);
 
-  return isValid;
+  return state;
 };

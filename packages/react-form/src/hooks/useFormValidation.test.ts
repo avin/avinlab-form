@@ -2,7 +2,7 @@ import { createElement, Suspense, type PropsWithChildren } from 'react';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createForm, type Form, type ValidationFunction } from '@avinlab/form';
-import { useFormIsValid, useFormValidation, useFormValidationError } from '../index';
+import { useFormValidation, useFormValidationError, useFormValidationState } from '../index';
 import { StrictModeWrapper } from '../test/react.test.utils';
 
 interface TestFormValues {
@@ -53,15 +53,21 @@ describe('useFormValidation', () => {
   });
 
   it('sets initial validation state', () => {
-    const { result } = renderHook(() => useFormValidation(form, validationFunction));
+    const renderedStates: string[] = [];
+    const { result } = renderHook(() => {
+      const validation = useFormValidation(form, validationFunction);
+      renderedStates.push(validation.state);
+      return validation;
+    });
 
     expect(validationFunction).toHaveBeenCalledTimes(1);
+    expect(renderedStates).toEqual(['unvalidated', 'invalid']);
 
-    // At the initial render, there should be no validation errors
     expect(result.current.errors).toEqual({
       name: 'Name is required',
       age: 'Must be at least 18',
     });
+    expect(result.current.state).toBe('invalid');
   });
 
   it('updates validation state when values change', () => {
@@ -76,7 +82,7 @@ describe('useFormValidation', () => {
     expect(validationFunction).toHaveBeenCalledTimes(3);
     // Errors should be empty if the input is valid
     expect(result.current.errors).toEqual({});
-    // isValidated should be updated accordingly
+    expect(result.current.state).toBe('valid');
   });
 
   it('does not subscribe or validate an abandoned form source during render', () => {
@@ -139,19 +145,26 @@ describe('useFormValidation', () => {
   it('switches form sources and stops observing the previous form', () => {
     const nextForm = createForm<TestFormValues>({ name: 'Jane', age: 25 });
     const { unsubscribe: unsubscribePrevious } = trackFormCleanup(form);
+    const renders: Array<{ source: Form<TestFormValues>; state: string }> = [];
     const { result, rerender } = renderHook(
-      ({ source }: { source: Form<TestFormValues> }) =>
-        useFormValidation(source, validationFunction),
+      ({ source }: { source: Form<TestFormValues> }) => {
+        const validation = useFormValidation(source, validationFunction);
+        renders.push({ source, state: validation.state });
+        return validation;
+      },
       { initialProps: { source: form } },
     );
 
-    expect(result.current.isValid).toBe(false);
+    expect(result.current.state).toBe('invalid');
 
     rerender({ source: nextForm });
 
     expect(unsubscribePrevious).toHaveBeenCalledOnce();
+    expect(
+      renders.filter((render) => render.source === nextForm).map((render) => render.state),
+    ).toEqual(['unvalidated', 'valid']);
     expect(result.current.errors).toEqual({});
-    expect(result.current.isValid).toBe(true);
+    expect(result.current.state).toBe('valid');
 
     act(() => form.setValue('name', 'Ignored'));
 
@@ -168,6 +181,8 @@ describe('useFormValidation', () => {
       { initialProps: { source: form } },
     );
     result.current.subscribe(listener);
+    const retainedErrors = result.current.errors;
+    const retainedState = result.current.state;
 
     act(() => {
       result.current.dispose();
@@ -178,6 +193,36 @@ describe('useFormValidation', () => {
 
     expect(nextSubscribe).not.toHaveBeenCalled();
     expect(listener).not.toHaveBeenCalled();
+    expect(result.current.errors).toBe(retainedErrors);
+    expect(result.current.state).toBe(retainedState);
+  });
+
+  it('retains its snapshot when validation throws', () => {
+    const failure = new Error('validation failed');
+    const throwingValidator = vi.fn((values: TestFormValues) => {
+      if (values.age === 17) {
+        throw failure;
+      }
+
+      return { name: 'Existing error' };
+    });
+    const { result } = renderHook(() => useFormValidation(form, throwingValidator));
+    const retainedErrors = result.current.errors;
+
+    expect(() => act(() => form.setValue('age', 17))).toThrow(failure);
+    expect(result.current.errors).toBe(retainedErrors);
+    expect(result.current.state).toBe('invalid');
+  });
+
+  it('does not reconnect or rerender indefinitely for an inline validator', () => {
+    let renderCount = 0;
+    const { result } = renderHook(() => {
+      renderCount += 1;
+      return useFormValidation(form, () => ({ name: 'Name is required' }));
+    });
+
+    expect(result.current.state).toBe('invalid');
+    expect(renderCount).toBe(2);
   });
 
   it('recalculates committed values with a changed validator and drops the old closure', () => {
@@ -264,24 +309,24 @@ describe('useFormValidation', () => {
     expect(renderCount).toBe(3);
   });
 
-  it('rerenders a validity reader only when overall validity changes', () => {
+  it('rerenders a validation-state reader only when the state changes', () => {
     let renderCount = 0;
     const { result } = renderHook(() => {
       renderCount += 1;
-      return useFormIsValid(form, validationFunction);
+      return useFormValidationState(form, validationFunction);
     });
 
-    expect(result.current).toBe(false);
+    expect(result.current).toBe('invalid');
     expect(renderCount).toBe(2);
 
     act(() => form.setValue('name', 'Alice'));
 
-    expect(result.current).toBe(false);
+    expect(result.current).toBe('invalid');
     expect(renderCount).toBe(2);
 
     act(() => form.setValue('age', 20));
 
-    expect(result.current).toBe(true);
+    expect(result.current).toBe('valid');
     expect(renderCount).toBe(3);
   });
 });

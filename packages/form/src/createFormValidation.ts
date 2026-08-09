@@ -2,6 +2,7 @@ import { objectsAreEqual } from './utils/objectsAreEqual';
 import type { Form, FormValues } from './createForm';
 
 export type FormErrors = Record<string, any>;
+export type ValidationState = 'unvalidated' | 'valid' | 'invalid';
 
 export type ValidationFunction<TFormErrors extends FormErrors, TFormValues extends FormValues> = (
   values: Readonly<TFormValues>,
@@ -13,7 +14,7 @@ type Unsubscribe = () => void;
 
 export interface FormValidation<TFormErrors extends FormErrors, TFormValues extends FormValues> {
   readonly errors: Readonly<TFormErrors>;
-  readonly isValid: boolean;
+  readonly state: ValidationState;
   validate: () => void;
   /** Configuring a new validator recalculates the current form snapshot synchronously. */
   setValidation: (validationFunc: ValidationFunction<TFormErrors, TFormValues>) => void;
@@ -34,7 +35,7 @@ export const createFormValidation = <
 ): FormValidation<TFormErrors, TFormValues> => {
   const _onValidateHandlers = new Set<ValidateHandler<TFormErrors>>();
   let errors = Object.freeze({}) as Readonly<TFormErrors>;
-  let isValid = true;
+  let state: ValidationState = 'unvalidated';
   let _validationFunc: ValidationFunction<TFormErrors, TFormValues> | null = null;
   let isDisposed = false;
   let unsubscribeForm: Unsubscribe = () => {};
@@ -56,22 +57,27 @@ export const createFormValidation = <
     return normalizeErrors(returnedErrors);
   };
 
-  const publishErrors = (newErrors: Readonly<TFormErrors>) => {
+  const publishValidationResult = (newErrors: Readonly<TFormErrors>) => {
     const shouldUpdateErrors = !objectsAreEqual(newErrors, errors);
+    const nextState = Object.keys(newErrors).length ? 'invalid' : 'valid';
+    const shouldUpdateState = state !== nextState;
 
-    if (shouldUpdateErrors) {
-      errors = newErrors;
-      isValid = !Object.keys(errors).length;
+    if (shouldUpdateErrors || shouldUpdateState) {
+      if (shouldUpdateErrors) {
+        errors = newErrors;
+      }
+
+      state = nextState;
 
       [..._onValidateHandlers].forEach((cb) => {
-        cb(newErrors);
+        cb(errors);
       });
     }
   };
 
   const validate = () => {
     if (!isDisposed && _validationFunc) {
-      publishErrors(calculateErrors(_validationFunc));
+      publishValidationResult(calculateErrors(_validationFunc));
     }
   };
 
@@ -87,7 +93,7 @@ export const createFormValidation = <
     }
 
     _validationFunc = validationFunction;
-    publishErrors(newErrors);
+    publishValidationResult(newErrors);
   };
 
   const subscribe = (cb: ValidateHandler<TFormErrors>) => {
@@ -137,8 +143,8 @@ export const createFormValidation = <
     get errors() {
       return errors;
     },
-    get isValid() {
-      return isValid;
+    get state() {
+      return state;
     },
   };
 };

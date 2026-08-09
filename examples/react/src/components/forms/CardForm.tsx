@@ -28,7 +28,7 @@ export function CardForm() {
     cvc: '',
   });
 
-  const { errors, isValid } = useFormValidation(form, (formValues, prevFormValues) => {
+  const { errors, state } = useFormValidation(form, (formValues, prevFormValues) => {
     const errors: FormValidationErrors<CardFormValues> = {};
 
     const check = (
@@ -54,7 +54,7 @@ export function CardForm() {
     e.preventDefault();
     setIsSubmitted(true);
 
-    if (isValid) {
+    if (state === 'valid') {
       alert(JSON.stringify(form.values, null, 2));
     }
   };
@@ -108,7 +108,7 @@ export function CardForm() {
             className={cn(
               'bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full mt-4',
               {
-                'opacity-50': !isValid,
+                'opacity-50': state !== 'valid',
               },
             )}
             type="submit"

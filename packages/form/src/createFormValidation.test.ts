@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, expectTypeOf, vi } from 'vitest';
-import type { Form, FormValidation } from './index';
+import type { Form, FormValidation, ValidationState } from './index';
 import { createForm, createFormValidation } from './index';
 
 interface FormFields {
@@ -32,7 +32,7 @@ describe('createFormValidation', () => {
 
     expect(validation.errors).toEqual({});
     expect(Object.isFrozen(validation.errors)).toBe(true);
-    expect(validation.isValid).toBe(true);
+    expect(validation.state).toBe('unvalidated');
   });
 
   it('normalizes a frozen validator result without mutating it', () => {
@@ -69,7 +69,7 @@ describe('createFormValidation', () => {
     expect(newValidator).toHaveBeenCalledOnce();
     expect(newValidator).toHaveBeenCalledWith({ ...initialValues, age: 31 }, initialValues);
     expect(validation.errors).toEqual({});
-    expect(validation.isValid).toBe(true);
+    expect(validation.state).toBe('valid');
     expect(listener).toHaveBeenCalledOnce();
     expect(listener).toHaveBeenCalledWith(validation.errors);
   });
@@ -85,8 +85,34 @@ describe('createFormValidation', () => {
     expect(validator).toHaveBeenCalledOnce();
     expect(validator).toHaveBeenCalledWith(initialValues, initialValues);
     expect(validation.errors).toEqual({ name: 'Required' });
-    expect(validation.isValid).toBe(false);
+    expect(validation.state).toBe('invalid');
     expect(listener).toHaveBeenCalledOnce();
+  });
+
+  it('publishes the first successful validation when only the state changes', () => {
+    const validation = createFormValidation<Record<string, never>, FormFields>(form);
+    const initialErrors = validation.errors;
+    const listener = vi.fn();
+    validation.subscribe(listener);
+
+    validation.setValidation(() => ({}));
+
+    expect(validation.state).toBe('valid');
+    expect(validation.errors).toBe(initialErrors);
+    expect(listener).toHaveBeenCalledOnce();
+    expect(listener).toHaveBeenCalledWith(initialErrors);
+  });
+
+  it('leaves an unvalidated controller unchanged when validate has no validator', () => {
+    const validation = createFormValidation(form);
+    const listener = vi.fn();
+    validation.subscribe(listener);
+
+    validation.validate();
+
+    expect(validation.state).toBe('unvalidated');
+    expect(validation.errors).toEqual({});
+    expect(listener).not.toHaveBeenCalled();
   });
 
   it('returns an idempotent unsubscribe function from validation subscriptions', () => {
@@ -117,6 +143,7 @@ describe('createFormValidation', () => {
     expect(validator).toHaveBeenCalledOnce();
     expect(listener).not.toHaveBeenCalled();
     expect(validation.errors).toEqual({});
+    expect(validation.state).toBe('valid');
   });
 
   it('retains the error snapshot and emits no event for equivalent normalized errors', () => {
@@ -133,6 +160,7 @@ describe('createFormValidation', () => {
 
     expect(validator).toHaveBeenCalledTimes(2);
     expect(validation.errors).toBe(initialErrors);
+    expect(validation.state).toBe('invalid');
     expect(listener).not.toHaveBeenCalled();
   });
 
@@ -171,6 +199,7 @@ describe('createFormValidation', () => {
     expect(() => throwingForm.setValue('age', 31)).toThrow(failure);
     expect(throwingForm.values.age).toBe(31);
     expect(validation.errors).toBe(initialErrors);
+    expect(validation.state).toBe('invalid');
     expect(listener).not.toHaveBeenCalled();
   });
 
@@ -205,18 +234,19 @@ describe('createFormValidation', () => {
       expectTypeOf(errors).toEqualTypeOf<Readonly<SpecificErrors>>();
     });
     expectTypeOf(validation.errors).toEqualTypeOf<Readonly<SpecificErrors>>();
+    expectTypeOf(validation.state).toEqualTypeOf<ValidationState>();
   });
 
-  it('should initialize without errors and with a valid state', () => {
+  it('should initialize without errors and with a valid state after validation', () => {
     expect(formValidation.errors).toEqual({});
-    expect(formValidation.isValid).toBe(true);
+    expect(formValidation.state).toBe('valid');
   });
 
   it('should validate with new values and update errors and validity', () => {
     form.setValue('name', ''); // This should trigger an error
     expect(validationFunction).toHaveBeenCalledWith({ ...initialValues, name: '' }, initialValues);
     expect(formValidation.errors).toEqual({ name: 'Name is required' });
-    expect(formValidation.isValid).toBe(false);
+    expect(formValidation.state).toBe('invalid');
   });
 
   it('should call validation handlers with errors', () => {

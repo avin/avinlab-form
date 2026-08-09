@@ -2,7 +2,7 @@
 
 A form is one stable mutable controller for its lifetime. `values` and `prevValues` are replaceable
 readonly snapshots, so mutating the form does **not** by itself rerender React. Reactivity is opt-in:
-use the narrowest field watcher, whole-form watcher, validation error reader, or validity reader
+use the narrowest field watcher, whole-form watcher, validation error reader, or state reader
 that renders the data.
 
 ## Install
@@ -139,8 +139,9 @@ values during the committed effect. Switching `form` disposes the old derived co
 unmounting releases both validation and form subscriptions.
 
 Use `useFormValidation` when a component intentionally needs the complete validation result. Use
-`useFormValidationError` for one error and `useFormIsValid` for only validity, so unrelated error
-changes do not rerender those consumers.
+`useFormValidationError` for one error and `useFormValidationState` for only the lifecycle state,
+so unrelated error changes do not rerender those consumers. Before the committed effect attaches
+the validator, the state is `unvalidated`; only `valid` means validation completed successfully.
 
 ```tsx
 type ProfileErrors = Partial<Record<keyof ProfileValues, string>>;
@@ -165,8 +166,8 @@ function AgeError({ form }: { form: Form<ProfileValues> }) {
 }
 
 function Submit({ form }: { form: Form<ProfileValues> }) {
-  const isValid = useFormIsValid<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <button disabled={!isValid}>Save</button>;
+  const state = useFormValidationState<ProfileErrors, ProfileValues>(form, validateProfile);
+  return <button disabled={state !== 'valid'}>Save</button>;
 }
 ```
 
