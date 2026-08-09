@@ -31,7 +31,8 @@
   "scripts": {
     "build": "cross-env MODE=prod tsup",
     "build:dev": "cross-env MODE=dev tsup",
-    "test": "vitest"
+    "test": "npm run typecheck && vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@avinlab/form": "^0.4.0",
