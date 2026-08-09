@@ -27,12 +27,8 @@ form.values.email = 'next@example.com';
 form.prevValues.email = 'previous@example.com';
 // @ts-expect-error Validation errors are readonly snapshots.
 validation.errors.email = 'Changed externally';
-// @ts-expect-error Boolean validity was removed in favor of the three-state lifecycle.
-validation.isValid;
 // @ts-expect-error ValidationState has exactly three supported values.
 const unsupportedState: ValidationState = 'pending';
-// @ts-expect-error useFormIsValid was removed in favor of useFormValidationState.
-ReactForm.useFormIsValid;
 const invalidBinding: FormComponentProps<typeof form.values, TextInputProps> = {
   form,
   label: 'Accepted',

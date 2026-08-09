@@ -174,5 +174,5 @@ function Submit({ form }: { form: Form<ProfileValues> }) {
 The full versions of every recipe above are strictly compiled in
 [`examples/react/src/documentationRecipes.tsx`](../../examples/react/src/documentationRecipes.tsx).
 Run `npm run typecheck --workspace example-react` from the repository root to check them. See the
-[core controller contract](../form/README.md) and [migration notes](../../MIGRATION.md) for update,
-equality, subscription, and readonly-snapshot semantics.
+[core controller contract](../form/README.md) for update, equality, subscription, and
+readonly-snapshot semantics.

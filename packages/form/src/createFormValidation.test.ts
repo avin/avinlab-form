@@ -62,7 +62,7 @@ describe('createFormValidation', () => {
     );
     changingForm.setValue('age', 31);
     const listener = vi.fn();
-    validation.onValidate(listener);
+    validation.subscribe(listener);
 
     validation.setValidation(newValidator);
 
@@ -250,31 +250,31 @@ describe('createFormValidation', () => {
   });
 
   it('should call validation handlers with errors', () => {
-    const onValidateHandler = vi.fn();
-    formValidation.onValidate(onValidateHandler);
+    const listener = vi.fn();
+    formValidation.subscribe(listener);
     form.setValue('age', 17); // This should trigger an error
 
-    expect(onValidateHandler).toHaveBeenCalledWith({
+    expect(listener).toHaveBeenCalledWith({
       age: 'Must be at least 18',
     });
     expect(formValidation.errors).toEqual({ age: 'Must be at least 18' });
   });
 
   it('should not call validation handlers if errors did not change', () => {
-    const onValidateHandler = vi.fn();
-    formValidation.onValidate(onValidateHandler);
+    const listener = vi.fn();
+    formValidation.subscribe(listener);
     // Setting value without changing the error state
     form.setValue('age', 20);
 
-    expect(onValidateHandler).not.toHaveBeenCalled(); // Should not be called since errors did not change
+    expect(listener).not.toHaveBeenCalled(); // Should not be called since errors did not change
   });
 
   it('should remove validation handlers correctly', () => {
-    const onValidateHandler = vi.fn();
-    formValidation.onValidate(onValidateHandler);
-    formValidation.offValidate(onValidateHandler);
+    const listener = vi.fn();
+    const unsubscribe = formValidation.subscribe(listener);
+    unsubscribe();
     form.setValue('name', ''); // This should normally trigger an error
 
-    expect(onValidateHandler).not.toHaveBeenCalled();
+    expect(listener).not.toHaveBeenCalled();
   });
 });

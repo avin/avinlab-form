@@ -8,7 +8,6 @@ narrowest watcher or validation selector a component needs.
   validation.
 - [`@avinlab/react-form`](./packages/react-form/README.md) — React creation, watchers, validation
   selectors, and generated controlled components.
-- [Migration notes](./MIGRATION.md) — equality, readonly snapshots, and subscription changes.
 - [Compiled recipes](./examples/react/src/documentationRecipes.tsx) — copyable TypeScript examples
   checked by the example application's strict configuration.
 

@@ -16,7 +16,7 @@ describe('createForm', () => {
 
   it('should update form values and call update handlers', () => {
     const updateHandler = vi.fn();
-    form.onUpdate(updateHandler);
+    form.subscribe(updateHandler);
     form.setValue('name', 'Jane');
 
     expect(form.values.name).toBe('Jane');
@@ -25,7 +25,7 @@ describe('createForm', () => {
 
   it('should not call update handlers if value is the same', () => {
     const updateHandler = vi.fn();
-    form.onUpdate(updateHandler);
+    form.subscribe(updateHandler);
     form.setValue('name', 'John'); // same as initial value
 
     expect(updateHandler).not.toHaveBeenCalled();
@@ -33,7 +33,7 @@ describe('createForm', () => {
 
   it('should call field-specific update handlers', () => {
     const fieldUpdateHandler = vi.fn();
-    form.onUpdateField('age', fieldUpdateHandler);
+    form.subscribeField('age', fieldUpdateHandler);
     form.setValue('age', 31);
 
     expect(fieldUpdateHandler).toHaveBeenCalledWith(31, 30);
@@ -43,9 +43,9 @@ describe('createForm', () => {
     const ageUpdateHandler = vi.fn();
     const nameUpdateHandler = vi.fn();
     const fullFormUpdateHandler = vi.fn();
-    form.onUpdateField('age', ageUpdateHandler);
-    form.onUpdateField('name', nameUpdateHandler);
-    form.onUpdate(fullFormUpdateHandler);
+    form.subscribeField('age', ageUpdateHandler);
+    form.subscribeField('name', nameUpdateHandler);
+    form.subscribe(fullFormUpdateHandler);
 
     form.setValues({ ...initialValues, age: 31 });
 
@@ -61,9 +61,9 @@ describe('createForm', () => {
     const ageUpdateHandler = vi.fn();
     const nameUpdateHandler = vi.fn();
     const fullFormUpdateHandler = vi.fn();
-    form.onUpdateField('age', ageUpdateHandler);
-    form.onUpdateField('name', nameUpdateHandler);
-    form.onUpdate(fullFormUpdateHandler);
+    form.subscribeField('age', ageUpdateHandler);
+    form.subscribeField('name', nameUpdateHandler);
+    form.subscribe(fullFormUpdateHandler);
 
     form.setValues({ ...initialValues });
 
@@ -74,8 +74,8 @@ describe('createForm', () => {
 
   it('should correctly remove update handlers', () => {
     const updateHandler = vi.fn();
-    form.onUpdate(updateHandler);
-    form.offUpdate(updateHandler);
+    const unsubscribe = form.subscribe(updateHandler);
+    unsubscribe();
     form.setValue('name', 'Jane');
 
     expect(updateHandler).not.toHaveBeenCalled();
@@ -83,8 +83,8 @@ describe('createForm', () => {
 
   it('should correctly remove field-specific update handlers', () => {
     const fieldUpdateHandler = vi.fn();
-    form.onUpdateField('age', fieldUpdateHandler);
-    form.offUpdateField('age', fieldUpdateHandler);
+    const unsubscribe = form.subscribeField('age', fieldUpdateHandler);
+    unsubscribe();
     form.setValue('age', 31);
 
     expect(fieldUpdateHandler).not.toHaveBeenCalled();
@@ -123,35 +123,6 @@ describe('createForm', () => {
 
     expect(formUpdateHandler).toHaveBeenCalledOnce();
     expect(fieldUpdateHandler).toHaveBeenCalledOnce();
-  });
-
-  it('keeps legacy on/off methods compatible with preferred subscriptions', () => {
-    const formUpdateHandler = vi.fn();
-    const fieldUpdateHandler = vi.fn();
-    form.onUpdate(formUpdateHandler);
-    form.subscribe(formUpdateHandler);
-    form.onUpdateField('age', fieldUpdateHandler);
-    form.subscribeField('age', fieldUpdateHandler);
-
-    form.setValue('age', 31);
-
-    expect(formUpdateHandler).toHaveBeenCalledOnce();
-    expect(fieldUpdateHandler).toHaveBeenCalledOnce();
-
-    form.offUpdate(formUpdateHandler);
-    form.offUpdateField('age', fieldUpdateHandler);
-    form.setValue('age', 32);
-
-    expect(formUpdateHandler).toHaveBeenCalledOnce();
-    expect(fieldUpdateHandler).toHaveBeenCalledOnce();
-  });
-
-  it('safely ignores cleanup of absent listeners', () => {
-    const formUpdateHandler = vi.fn();
-    const fieldUpdateHandler = vi.fn();
-
-    expect(() => form.offUpdate(formUpdateHandler)).not.toThrow();
-    expect(() => form.offUpdateField('age', fieldUpdateHandler)).not.toThrow();
   });
 
   it('supports prototype-like, empty, and numeric field keys', () => {
@@ -372,7 +343,7 @@ describe('createForm', () => {
     };
     const objectIsForm = createForm(values);
     const updateHandler = vi.fn();
-    objectIsForm.onUpdate(updateHandler);
+    objectIsForm.subscribe(updateHandler);
 
     objectIsForm.setValue('notANumber', Number.NaN);
     objectIsForm.setValue('reference', reference);
@@ -387,7 +358,7 @@ describe('createForm', () => {
 
     const replacementForm = createForm(values);
     const replacementUpdateHandler = vi.fn();
-    replacementForm.onUpdate(replacementUpdateHandler);
+    replacementForm.subscribe(replacementUpdateHandler);
 
     replacementForm.setValues({ ...values, signedZero: -0 });
 
@@ -400,8 +371,8 @@ describe('createForm', () => {
     const previousSnapshot = form.prevValues;
     const fieldUpdateHandler = vi.fn();
     const formUpdateHandler = vi.fn();
-    form.onUpdateField('name', fieldUpdateHandler);
-    form.onUpdate(formUpdateHandler);
+    form.subscribeField('name', fieldUpdateHandler);
+    form.subscribe(formUpdateHandler);
 
     form.setValue('name', 'John');
     form.setValues({ ...initialValues });
@@ -428,9 +399,9 @@ describe('createForm', () => {
 
   it('notifies changed fields in snapshot order before one form notification', () => {
     const notifications: string[] = [];
-    form.onUpdateField('name', () => notifications.push('field:name'));
-    form.onUpdateField('age', () => notifications.push('field:age'));
-    form.onUpdate(() => notifications.push('form'));
+    form.subscribeField('name', () => notifications.push('field:name'));
+    form.subscribeField('age', () => notifications.push('field:age'));
+    form.subscribe(() => notifications.push('form'));
 
     form.setValues({ name: 'Jane', age: 31 });
 
@@ -440,7 +411,7 @@ describe('createForm', () => {
   it('notifies an optional field removed by full replacement', () => {
     const optionalForm = createForm<{ name?: string }>({ name: 'John' });
     const fieldUpdateHandler = vi.fn();
-    optionalForm.onUpdateField('name', fieldUpdateHandler);
+    optionalForm.subscribeField('name', fieldUpdateHandler);
 
     optionalForm.setValues({});
 
@@ -457,10 +428,10 @@ describe('createForm', () => {
   ])('treats %s fields as immutable references', (_name, initialReference, nextReference) => {
     const referenceForm = createForm({ field: initialReference });
     const updateHandler = vi.fn();
-    referenceForm.onUpdate(updateHandler);
+    referenceForm.subscribe(updateHandler);
     const replacementForm = createForm({ field: initialReference });
     const replacementUpdateHandler = vi.fn();
-    replacementForm.onUpdate(replacementUpdateHandler);
+    replacementForm.subscribe(replacementUpdateHandler);
 
     referenceForm.setValue('field', initialReference);
     referenceForm.setValues({ field: initialReference });
@@ -482,7 +453,7 @@ describe('createForm', () => {
     const nested = { count: 1 };
     const nestedForm = createForm({ nested });
     const updateHandler = vi.fn();
-    nestedForm.onUpdate(updateHandler);
+    nestedForm.subscribe(updateHandler);
 
     nested.count = 2;
     nestedForm.setValue('nested', nested);

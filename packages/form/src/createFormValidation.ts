@@ -19,10 +19,6 @@ export interface FormValidation<TFormErrors extends FormErrors, TFormValues exte
   /** Configuring a new validator recalculates the current form snapshot synchronously. */
   setValidation: (validationFunc: ValidationFunction<TFormErrors, TFormValues>) => void;
   subscribe: (cb: ValidateHandler<TFormErrors>) => Unsubscribe;
-  /** @deprecated Prefer `subscribe`, which returns its cleanup function. */
-  onValidate: (cb: ValidateHandler<TFormErrors>) => void;
-  /** @deprecated Keep the cleanup returned by `subscribe` instead. */
-  offValidate: (cb: ValidateHandler<TFormErrors>) => void;
   dispose: () => void;
 }
 
@@ -33,7 +29,7 @@ export const createFormValidation = <
   form: Form<TFormValues>,
   validationFunc?: ValidationFunction<TFormErrors, TFormValues>,
 ): FormValidation<TFormErrors, TFormValues> => {
-  const _onValidateHandlers = new Set<ValidateHandler<TFormErrors>>();
+  const validateHandlers = new Set<ValidateHandler<TFormErrors>>();
   let errors = Object.freeze({}) as Readonly<TFormErrors>;
   let state: ValidationState = 'unvalidated';
   let _validationFunc: ValidationFunction<TFormErrors, TFormValues> | null = null;
@@ -69,7 +65,7 @@ export const createFormValidation = <
 
       state = nextState;
 
-      [..._onValidateHandlers].forEach((cb) => {
+      [...validateHandlers].forEach((cb) => {
         cb(errors);
       });
     }
@@ -101,19 +97,11 @@ export const createFormValidation = <
       return () => {};
     }
 
-    _onValidateHandlers.add(cb);
+    validateHandlers.add(cb);
 
     return () => {
-      _onValidateHandlers.delete(cb);
+      validateHandlers.delete(cb);
     };
-  };
-
-  const onValidate = (cb: ValidateHandler<TFormErrors>) => {
-    subscribe(cb);
-  };
-
-  const offValidate = (cb: ValidateHandler<TFormErrors>) => {
-    _onValidateHandlers.delete(cb);
   };
 
   const dispose = () => {
@@ -123,7 +111,7 @@ export const createFormValidation = <
 
     isDisposed = true;
     unsubscribeForm();
-    _onValidateHandlers.clear();
+    validateHandlers.clear();
     _validationFunc = null;
   };
 
@@ -137,8 +125,6 @@ export const createFormValidation = <
     validate,
     setValidation,
     subscribe,
-    onValidate,
-    offValidate,
     dispose,
     get errors() {
       return errors;
