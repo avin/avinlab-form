@@ -14,6 +14,25 @@ A React library for building forms with ease, providing hooks for managing form 
 npm install @avinlab/react-form
 ```
 
+## Controller and watcher behavior
+
+`useForm(initialValues)` creates one stable form controller for the component's committed
+lifetime. Later renders do not replace the controller or re-read `initialValues`, and changing the
+form does not rerender the component that owns it. Use controller methods when new external data
+must replace the current values.
+
+Reading `form.values` is imperative. Use `useFormWatch(form)` when a component should rerender for
+each successful whole-form commit, or `useFormWatch(form, fieldName)` when it should rerender only
+for changes to one field. No-op updates do not rerender either watcher. Changing the form source or
+selected field returns the new current snapshot during that render and releases the previous
+subscription after commit.
+
+Watchers use React's external-store contract through the supported compatibility shim, so React 17
+remains supported and updates around subscription setup are not missed. During server rendering,
+the server snapshot is the form's current value (or current selected-field value). Hydration should
+create the form from the same initial data used on the server so the initial client output matches
+the server markup.
+
 ### Playground
 
 Online example is [here](https://stackblitz.com/edit/vitejs-vite-4bwk8r?file=src%2Fcomponents%2Fforms%2FCardForm.tsx)

@@ -34,7 +34,8 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@avinlab/form": "^0.4.0"
+    "@avinlab/form": "^0.4.0",
+    "use-sync-external-store": "^1.6.0"
   },
   "peerDependencies": {
     "react": ">=17.0.0",
@@ -52,5 +53,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "98b2452f398fc913cbc6c0fa6a7183e73d9760d7"
+  "gitHead": "98b2452f398fc913cbc6c0fa6a7183e73d9760d7",
+  "devDependencies": {
+    "@types/use-sync-external-store": "^1.5.0"
+  }
 }

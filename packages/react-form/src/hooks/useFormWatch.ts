@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useCallback } from 'react';
+import { useSyncExternalStore } from 'use-sync-external-store/shim';
 import type { Form, FormValues } from '@avinlab/form';
 
 // Overloading functions
@@ -12,29 +13,17 @@ export function useFormWatch<TFormValues extends FormValues, TFieldName extends 
   form: Form<TFormValues>,
   fieldName?: TFieldName,
 ) {
-  const [value, setValue] = useState(
-    fieldName !== undefined ? form.values[fieldName] : form.values,
+  const subscribe = useCallback(
+    (onStoreChange: () => void) =>
+      fieldName !== undefined
+        ? form.subscribeField(fieldName, onStoreChange)
+        : form.subscribe(onStoreChange),
+    [fieldName, form],
+  );
+  const getSnapshot = useCallback(
+    () => (fieldName !== undefined ? form.values[fieldName] : form.values),
+    [fieldName, form],
   );
 
-  useEffect(() => {
-    const handleUpdate = (v: any) => {
-      setValue(v);
-    };
-
-    if (fieldName !== undefined) {
-      form.onUpdateField(fieldName, handleUpdate);
-    } else {
-      form.onUpdate(handleUpdate);
-    }
-
-    return () => {
-      if (fieldName !== undefined) {
-        form.offUpdateField(fieldName, handleUpdate);
-      } else {
-        form.offUpdate(handleUpdate);
-      }
-    };
-  }, [fieldName, form]);
-
-  return value;
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
