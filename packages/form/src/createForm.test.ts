@@ -90,6 +90,142 @@ describe('createForm', () => {
     expect(fieldUpdateHandler).not.toHaveBeenCalled();
   });
 
+  it('returns idempotent cleanup functions from preferred subscriptions', () => {
+    const formUpdateHandler = vi.fn();
+    const fieldUpdateHandler = vi.fn();
+    const unsubscribeForm = form.subscribe(formUpdateHandler);
+    const unsubscribeField = form.subscribeField('age', fieldUpdateHandler);
+
+    form.setValue('age', 31);
+
+    expect(formUpdateHandler).toHaveBeenCalledOnce();
+    expect(fieldUpdateHandler).toHaveBeenCalledOnce();
+
+    unsubscribeForm();
+    unsubscribeForm();
+    unsubscribeField();
+    unsubscribeField();
+    form.setValue('age', 32);
+
+    expect(formUpdateHandler).toHaveBeenCalledOnce();
+    expect(fieldUpdateHandler).toHaveBeenCalledOnce();
+  });
+
+  it('notifies the same callback once when it is registered repeatedly for one target', () => {
+    const formUpdateHandler = vi.fn();
+    const fieldUpdateHandler = vi.fn();
+    form.subscribe(formUpdateHandler);
+    form.subscribe(formUpdateHandler);
+    form.subscribeField('age', fieldUpdateHandler);
+    form.subscribeField('age', fieldUpdateHandler);
+
+    form.setValue('age', 31);
+
+    expect(formUpdateHandler).toHaveBeenCalledOnce();
+    expect(fieldUpdateHandler).toHaveBeenCalledOnce();
+  });
+
+  it('keeps legacy on/off methods compatible with preferred subscriptions', () => {
+    const formUpdateHandler = vi.fn();
+    const fieldUpdateHandler = vi.fn();
+    form.onUpdate(formUpdateHandler);
+    form.subscribe(formUpdateHandler);
+    form.onUpdateField('age', fieldUpdateHandler);
+    form.subscribeField('age', fieldUpdateHandler);
+
+    form.setValue('age', 31);
+
+    expect(formUpdateHandler).toHaveBeenCalledOnce();
+    expect(fieldUpdateHandler).toHaveBeenCalledOnce();
+
+    form.offUpdate(formUpdateHandler);
+    form.offUpdateField('age', fieldUpdateHandler);
+    form.setValue('age', 32);
+
+    expect(formUpdateHandler).toHaveBeenCalledOnce();
+    expect(fieldUpdateHandler).toHaveBeenCalledOnce();
+  });
+
+  it('safely ignores cleanup of absent listeners', () => {
+    const formUpdateHandler = vi.fn();
+    const fieldUpdateHandler = vi.fn();
+
+    expect(() => form.offUpdate(formUpdateHandler)).not.toThrow();
+    expect(() => form.offUpdateField('age', fieldUpdateHandler)).not.toThrow();
+  });
+
+  it('supports prototype-like, empty, and numeric field keys', () => {
+    const unusualForm = createForm({
+      toString: 'old',
+      constructor: 'old',
+      ['__proto__']: 'old',
+      '': 'old',
+      0: 'old',
+    });
+    const toStringHandler = vi.fn();
+    const constructorHandler = vi.fn();
+    const protoHandler = vi.fn();
+    const emptyHandler = vi.fn();
+    const numericHandler = vi.fn();
+    unusualForm.subscribeField('toString', toStringHandler);
+    unusualForm.subscribeField('constructor', constructorHandler);
+    unusualForm.subscribeField('__proto__', protoHandler);
+    unusualForm.subscribeField('', emptyHandler);
+    unusualForm.subscribeField(0, numericHandler);
+
+    unusualForm.setValues({
+      toString: 'new',
+      constructor: 'new',
+      ['__proto__']: 'new',
+      '': 'new',
+      0: 'new',
+    });
+
+    expect(toStringHandler).toHaveBeenCalledWith('new', 'old');
+    expect(constructorHandler).toHaveBeenCalledWith('new', 'old');
+    expect(protoHandler).toHaveBeenCalledWith('new', 'old');
+    expect(emptyHandler).toHaveBeenCalledWith('new', 'old');
+    expect(numericHandler).toHaveBeenCalledWith('new', 'old');
+  });
+
+  it('uses a listener snapshot when subscriptions change during dispatch', () => {
+    const formNotifications: string[] = [];
+    const addedFormHandler = () => formNotifications.push('added');
+    const removedFormHandler = () => formNotifications.push('removed');
+    let unsubscribeRemovedForm = () => {};
+    form.subscribe(() => {
+      formNotifications.push('first');
+      unsubscribeRemovedForm();
+      form.subscribe(addedFormHandler);
+    });
+    unsubscribeRemovedForm = form.subscribe(removedFormHandler);
+
+    const fieldNotifications: string[] = [];
+    const addedFieldHandler = () => fieldNotifications.push('added');
+    const removedFieldHandler = () => fieldNotifications.push('removed');
+    let unsubscribeRemovedField = () => {};
+    form.subscribeField('age', () => {
+      fieldNotifications.push('first');
+      unsubscribeRemovedField();
+      form.subscribeField('age', addedFieldHandler);
+      unsubscribeRemovedForm();
+      form.subscribe(addedFormHandler);
+    });
+    unsubscribeRemovedField = form.subscribeField('age', removedFieldHandler);
+
+    form.setValue('age', 31);
+
+    expect(fieldNotifications).toEqual(['first', 'removed']);
+    expect(formNotifications).toEqual(['first', 'removed']);
+
+    fieldNotifications.length = 0;
+    formNotifications.length = 0;
+    form.setValue('age', 32);
+
+    expect(fieldNotifications).toEqual(['first', 'added']);
+    expect(formNotifications).toEqual(['first', 'added']);
+  });
+
   it('uses Object.is for field equality in both update methods', () => {
     const reference = { nested: true };
     const values = {
