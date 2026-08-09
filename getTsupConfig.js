@@ -1,5 +1,3 @@
-import { esbuildPluginFilePathExtensions } from 'esbuild-plugin-file-path-extensions';
-
 export function getConfig(opts) {
   return {
     entry: opts.entry,
@@ -8,7 +6,6 @@ export function getConfig(opts) {
     outDir: 'dist',
     dts: true,
     sourcemap: true,
-    esbuildPlugins: [esbuildPluginFilePathExtensions({ esmExtension: 'js' })],
 
     ...(process.env.MODE === 'prod' && {
       clean: true,

@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "..",
+    "jsx": "react-jsx",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "paths": {
+      "@avinlab/form": ["packages/form/src/index.ts"],
+      "@avinlab/react-form": ["packages/react-form/src/index.ts"]
+    }
+  },
+  "include": ["public-contracts.ts"]
+}
