@@ -1,147 +1,177 @@
 # @avinlab/react-form
 
-A React library for building forms with ease, providing hooks for managing form state and validation in React applications.
+A form is one stable mutable controller for its lifetime. `values` and `prevValues` are replaceable
+readonly snapshots, so mutating the form does **not** by itself rerender React. Reactivity is opt-in:
+use the narrowest field watcher, whole-form watcher, validation error reader, or validity reader
+that renders the data.
 
-## Features
-
-- 🎯 **Easy to use**: Simple API for managing form state with minimal boilerplate.
-- 🔧 **Customizable**: Extendable to fit the needs of your specific form logic.
-- 🚀 **Performance**: Optimized to reduce unnecessary renders and improve performance.
-
-## Installation
+## Install
 
 ```sh
 npm install @avinlab/react-form
 ```
 
-## Controller and watcher behavior
+## Creating and synchronizing a form
 
-`useForm(initialValues)` creates one stable form controller for the component's committed
-lifetime. Later renders do not replace the controller or re-read `initialValues`, and changing the
-form does not rerender the component that owns it. Use controller methods when new external data
-must replace the current values.
+`useForm(initialValues)` reads `initialValues` only when it creates the controller. Parent renders
+do not reset user input. The returned `form` identity is safe in dependency arrays, context values,
+memoized values, and props.
 
-Reading `form.values` is imperative. Use `useFormWatch(form)` when a component should rerender for
-each successful whole-form commit, or `useFormWatch(form, fieldName)` when it should rerender only
-for changes to one field. No-op updates do not rerender either watcher. Changing the form source or
-selected field returns the new current snapshot during that render and releases the previous
-subscription after commit.
+When external data should replace the current values, synchronize it explicitly:
 
-Watchers use React's external-store contract through the supported compatibility shim, so React 17
-remains supported and updates around subscription setup are not missed. During server rendering,
-the server snapshot is the form's current value (or current selected-field value). Hydration should
-create the form from the same initial data used on the server so the initial client output matches
-the server markup.
+```tsx
+const form = useForm(initialProfile);
 
-### Playground
+useEffect(() => {
+  form.setValues(profileFromServer);
+}, [form, profileFromServer]);
+```
 
-Online example is [here](https://stackblitz.com/edit/vitejs-vite-4bwk8r?file=src%2Fcomponents%2Fforms%2FCardForm.tsx)
+`form.values` is an imperative read. Choose `useFormWatch(form, 'field')` for one field or
+`useFormWatch(form)` for the complete snapshot. A field watcher ignores unrelated commits; a
+whole-form watcher updates exactly once for each successful commit. Neither updates for a no-op.
+If a render supplies another field or another form, the hook immediately reads that source's
+current snapshot and React releases the old subscription during commit.
 
-## Usage
+Watchers provide the current controller snapshot as their server snapshot. Use the same initial
+data on the server and first client render to produce hydration-compatible output; server rendering
+does not depend on effects or browser APIs.
 
-Create form with validation:
+## Uncontrolled input
 
-```jsx
-import React from 'react';
-import { useForm, useFormValidation, useFormWatch } from '@avinlab/react-form';
+An uncontrolled DOM input reads its initial value once and writes changes through the controller.
+The owner does not subscribe and therefore does not rerender for the edit.
 
-const ExampleForm = () => {
+```tsx
+function ProfileForm() {
   const form = useForm({ name: 'Bob', age: 20 });
 
-  const { errors, isValid, validate } = useFormValidation(form, (values, prevValues) => {
-    const errors = {};
-    if (!values.name) {
-      errors.name = 'Name is required';
-    }
-    if (values.age && values.age < 18) {
-      errors.age = 'Must be at least 18';
-    }
-    return errors;
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (isValid) {
-      console.log(form.values);
-    }
-  };
-
-  // If you want to render the form values:
-  // const nameValue = useFormWatch(form, 'name');
-  // const formValuesObj = useFormWatch(form);
-
   return (
-    <form onSubmit={handleSubmit}>
+    <form>
       <input
         name="name"
         defaultValue={form.values.name}
-        onChange={(e) => form.setValue('name', e.currentTarget.value)}
+        onChange={(event) => form.setValue('name', event.currentTarget.value)}
       />
-      {errors.name && <span className="error">{errors.name}</span>}
-
       <input
         name="age"
+        type="number"
         defaultValue={form.values.age}
-        onChange={(e) => form.setValue('name', e.currentTarget.value)}
+        onChange={(event) => form.setValue('age', Number(event.currentTarget.value))}
       />
-      {errors.name && <span className="error">{errors.name}</span>}
-
-      <button type="submit" disabled={!isValid}>
-        Submit
-      </button>
-    </form>
-  );
-};
-```
-
-### Examples
-
-For more advanced examples, check out the [example directory](../../examples/react).
-
-### Creating controlled components faster
-
-You can use `createFormComponent` helper to quickly bind form fields to the form state:
-
-```jsx
-import { createFormComponent, useForm } from '@avinlab/react-form';
-
-const TextInput = ({ label, ...props }) => (
-  <label className="block">
-    <span className="block text-sm font-semibold text-gray-700 mb-1">{label}</span>
-    <input className="input w-full" {...props} />
-  </label>
-);
-
-const FormTextInput = createFormComponent(TextInput, {
-  getValue: (event) => event.currentTarget.value,
-});
-
-const CheckboxInput = ({ label, ...props }) => (
-  <label className="inline-flex items-center space-x-2">
-    <input type="checkbox" {...props} />
-    <span>{label}</span>
-  </label>
-);
-
-const FormCheckboxInput = createFormComponent(CheckboxInput, {
-  valueAttrName: 'checked',
-  getValue: (event) => event.target.checked,
-});
-
-export function ProfileForm() {
-  const form = useForm({ email: '', accepted: false });
-
-  return (
-    <form className="space-y-4">
-      <FormTextInput form={form} name="email" label="Email" placeholder="john@doe.com" />
-      <FormCheckboxInput form={form} name="accepted" label="I agree with the terms" />
     </form>
   );
 }
 ```
 
-`createFormComponent` accepts an optional options object as a second argument:
+The age recipe intentionally updates `age`, converts the DOM string to a number, and displays an
+`age` error in the validation example below.
 
-- `valueAttrName` – name of the prop that receives the form value (defaults to `"value"`).
-- `onChangeAttrName` – name of the change handler prop (defaults to `"onChange"`).
-- `getValue(event)` – function that extracts the value to store in the form. By default it simply returns whatever is passed as the first argument of the `onChange` handler.
+## Generated controlled components
+
+`createFormComponent` builds a controlled component that watches only its selected field. Its types
+connect the field value to the configured value prop, change prop, event, and extractor result. The
+binding-owned props are not accepted from the caller.
+
+```tsx
+const FormTextInput = createFormComponent(TextInput, {
+  getValue: (event: React.ChangeEvent<HTMLInputElement>) => event.currentTarget.value,
+});
+
+interface ToggleProps {
+  checked: boolean;
+  label: string;
+  onToggle: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const Toggle = ({ checked, label, onToggle }: ToggleProps) => (
+  <label>
+    <input type="checkbox" checked={checked} onChange={onToggle} />
+    {label}
+  </label>
+);
+
+const FormToggle = createFormComponent(Toggle, {
+  valueAttrName: 'checked',
+  onChangeAttrName: 'onToggle',
+  getValue: (event: React.ChangeEvent<HTMLInputElement>) => event.currentTarget.checked,
+});
+
+function ControlledProfileForm() {
+  const form = useForm({ name: '', accepted: false });
+  return (
+    <>
+      <FormTextInput form={form} name="name" label="Name" />
+      <FormToggle form={form} name="accepted" label="Accept terms" />
+    </>
+  );
+}
+```
+
+`valueAttrName` defaults to `value`, `onChangeAttrName` defaults to `onChange`, and `getValue`
+defaults to the first change-handler argument.
+
+## Field and whole-form watchers
+
+Keep subscriptions next to the output that needs them:
+
+```tsx
+function Name({ form }: { form: Form<ProfileValues> }) {
+  const name = useFormWatch(form, 'name');
+  return <output>{name}</output>;
+}
+
+function Summary({ form }: { form: Form<ProfileValues> }) {
+  const values = useFormWatch(form);
+  return <output>{JSON.stringify(values)}</output>;
+}
+```
+
+The deterministic render guarantee is selective notification, not a general performance claim:
+one whole-form watcher update per real commit, one selected-field update when that field changes,
+and no watcher update for unrelated fields or no-ops.
+
+## Validation lifecycle and selectors
+
+Validation remains synchronous. React attaches it only after a render commits; once connected, a
+validator runs against the current snapshot. A different validator function recalculates current
+values during the committed effect. Switching `form` disposes the old derived controller, and
+unmounting releases both validation and form subscriptions.
+
+Use `useFormValidation` when a component intentionally needs the complete validation result. Use
+`useFormValidationError` for one error and `useFormIsValid` for only validity, so unrelated error
+changes do not rerender those consumers.
+
+```tsx
+type ProfileErrors = Partial<Record<keyof ProfileValues, string>>;
+
+const validateProfile = (values: Readonly<ProfileValues>): ProfileErrors => ({
+  name: values.name ? undefined : 'Name is required',
+  age: values.age >= 18 ? undefined : 'Must be at least 18',
+});
+
+function CompleteErrors({ form }: { form: Form<ProfileValues> }) {
+  const validation = useFormValidation<ProfileErrors, ProfileValues>(form, validateProfile);
+  return <output>{JSON.stringify(validation.errors)}</output>;
+}
+
+function AgeError({ form }: { form: Form<ProfileValues> }) {
+  const error = useFormValidationError<ProfileErrors, ProfileValues, 'age'>(
+    form,
+    validateProfile,
+    'age',
+  );
+  return <output>{error}</output>;
+}
+
+function Submit({ form }: { form: Form<ProfileValues> }) {
+  const isValid = useFormIsValid<ProfileErrors, ProfileValues>(form, validateProfile);
+  return <button disabled={!isValid}>Save</button>;
+}
+```
+
+The full versions of every recipe above are strictly compiled in
+[`examples/react/src/documentationRecipes.tsx`](../../examples/react/src/documentationRecipes.tsx).
+Run `npm run typecheck --workspace example-react` from the repository root to check them. See the
+[core controller contract](../form/README.md) and [migration notes](../../MIGRATION.md) for update,
+equality, subscription, and readonly-snapshot semantics.
