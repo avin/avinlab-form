@@ -62,8 +62,52 @@ export const createForm = <TFormValues extends FormValues>(
   const _onUpdateHandlers = new Set<UpdateHandler<TFormValues>>();
   const _onUpdateFieldHandlers = new Map<string, Set<UpdateFieldHandler<any>>>();
   const normalizeFieldName = (fieldName: keyof TFormValues) => String(fieldName);
+  const updateQueue: Array<(currentValues: FormSnapshot<TFormValues>) => TFormValues> = [];
+  let isProcessingUpdates = false;
+  const attemptListener = <TArgs extends unknown[]>(
+    listenerFailures: unknown[],
+    cb: (...args: TArgs) => void,
+    ...args: TArgs
+  ) => {
+    try {
+      cb(...args);
+    } catch (error) {
+      listenerFailures.push(error);
+    }
+  };
 
-  const commit = (nextValues: TFormValues) => {
+  const commit = (createNextValues: (currentValues: FormSnapshot<TFormValues>) => TFormValues) => {
+    updateQueue.push(createNextValues);
+
+    if (isProcessingUpdates) {
+      return;
+    }
+
+    isProcessingUpdates = true;
+    const listenerFailures: unknown[] = [];
+
+    try {
+      while (updateQueue.length > 0) {
+        const queuedUpdate = updateQueue.shift();
+
+        if (queuedUpdate) {
+          listenerFailures.push(...commitNextValues(queuedUpdate(values)));
+        }
+      }
+    } finally {
+      isProcessingUpdates = false;
+    }
+
+    if (listenerFailures.length === 1) {
+      throw listenerFailures[0];
+    }
+
+    if (listenerFailures.length > 1) {
+      throw new AggregateError(listenerFailures, 'Multiple form listeners failed');
+    }
+  };
+
+  const commitNextValues = (nextValues: TFormValues) => {
     const nextFieldNames = Object.keys(nextValues) as (keyof TFormValues)[];
     const currentFieldNames = Object.keys(values) as (keyof TFormValues)[];
     const changedNextFieldNames = nextFieldNames.filter(
@@ -77,7 +121,7 @@ export const createForm = <TFormValues extends FormValues>(
     const changedFieldNames = [...changedNextFieldNames, ...removedFieldNames];
 
     if (changedFieldNames.length === 0) {
-      return;
+      return [];
     }
 
     const committedPrevValues = values;
@@ -92,28 +136,40 @@ export const createForm = <TFormValues extends FormValues>(
     const formUpdateHandlers = [..._onUpdateHandlers];
     prevValues = committedPrevValues;
     values = committedValues;
+    const listenerFailures: unknown[] = [];
 
     fieldNotifications.forEach(([fieldName, handlers]) => {
       handlers.forEach((cb) => {
-        cb(committedValues[fieldName], committedPrevValues[fieldName]);
+        attemptListener(
+          listenerFailures,
+          cb,
+          committedValues[fieldName],
+          committedPrevValues[fieldName],
+        );
       });
     });
 
     formUpdateHandlers.forEach((cb) => {
-      cb(committedValues, committedPrevValues);
+      attemptListener(listenerFailures, cb, committedValues, committedPrevValues);
     });
+
+    return listenerFailures;
   };
 
   const setValue = <TFieldName extends keyof TFormValues>(
     fieldName: TFieldName,
     value: TFormValues[TFieldName],
   ) => {
-    const nextValues: TFormValues = { ...values, [fieldName]: value };
-    commit(nextValues);
+    commit((currentValues) => {
+      const nextValues: TFormValues = { ...currentValues, [fieldName]: value };
+
+      return nextValues;
+    });
   };
 
   const setValues = (newValues: TFormValues) => {
-    commit(newValues);
+    const requestedValues: TFormValues = { ...newValues };
+    commit(() => requestedValues);
   };
 
   const subscribeField = <TFieldName extends keyof TFormValues>(
