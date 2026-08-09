@@ -13,7 +13,7 @@ export function DebugForm() {
     name2: 'value2',
   });
 
-  const { errors, isValid, validate } = useFormValidation(form, (values, prevValues) => {
+  const { errors, state, validate } = useFormValidation(form, (values, prevValues) => {
     const errors: Record<string, string> = {};
     if (values.name1.length < minLength) {
       errors.name1 = 'Name1 is too short';
@@ -39,7 +39,7 @@ export function DebugForm() {
   console.log('render');
 
   const handleSubmit = () => {
-    if (!isValid) {
+    if (state !== 'valid') {
       return;
     }
     console.log(form.values);
@@ -77,7 +77,7 @@ export function DebugForm() {
         </div>
         <div>name2: {value2}</div>
       </div>
-      <div>isValid: {String(isValid)}</div>
+      <div>validation state: {state}</div>
 
       <div>
         minLength: {minLength}{' '}

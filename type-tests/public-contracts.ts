@@ -1,4 +1,6 @@
 import { createForm, createFormValidation } from '@avinlab/form';
+import type { ValidationState } from '@avinlab/form';
+import * as ReactForm from '@avinlab/react-form';
 import type { FormComponentProps } from '@avinlab/react-form';
 
 interface TextInputProps {
@@ -11,6 +13,7 @@ const form = createForm({ accepted: false, email: 'first@example.com' });
 const validation = createFormValidation<{ email?: string }, typeof form.values>(form, (values) =>
   values.email.includes('@') ? {} : { email: 'Invalid email' },
 );
+const state: ValidationState = validation.state;
 
 const validBinding: FormComponentProps<typeof form.values, TextInputProps> = {
   form,
@@ -24,6 +27,12 @@ form.values.email = 'next@example.com';
 form.prevValues.email = 'previous@example.com';
 // @ts-expect-error Validation errors are readonly snapshots.
 validation.errors.email = 'Changed externally';
+// @ts-expect-error Boolean validity was removed in favor of the three-state lifecycle.
+validation.isValid;
+// @ts-expect-error ValidationState has exactly three supported values.
+const unsupportedState: ValidationState = 'pending';
+// @ts-expect-error useFormIsValid was removed in favor of useFormValidationState.
+ReactForm.useFormIsValid;
 const invalidBinding: FormComponentProps<typeof form.values, TextInputProps> = {
   form,
   label: 'Accepted',
@@ -32,4 +41,7 @@ const invalidBinding: FormComponentProps<typeof form.values, TextInputProps> = {
 };
 
 void invalidBinding;
+void state;
+void unsupportedState;
 void validBinding;
+void ReactForm.useFormValidationState;

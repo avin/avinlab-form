@@ -60,7 +60,9 @@ commits retain the exact same controller object.
 synchronously when configured, after each successful form commit, when replaced with a different
 validator, or when `validate()` is called. It receives the committed `values` and `prevValues`.
 The returned object is copied, top-level `undefined` entries are omitted, and the caller's object is
-never mutated. Equivalent normalized errors do not notify subscribers.
+never mutated. `state` is `unvalidated` before any validator completes, `valid` for an empty
+normalized result, and `invalid` otherwise. Subscribers are notified when either errors or state
+changes; equivalent errors in the same state preserve their snapshot reference and do not notify.
 
 ```ts
 import { createForm, createFormValidation } from '@avinlab/form';
@@ -88,8 +90,10 @@ unsubscribe();
 validation.dispose(); // idempotent; releases the form subscription and listeners
 ```
 
-Without a validator, `errors` is an empty readonly object and `isValid` is `true`. Disposal is
-explicit and idempotent; a disposed validation controller no longer reacts to form commits.
+Without a validator, `errors` is an empty readonly object and `state` is `unvalidated`. Only
+`state === 'valid'` means validation completed successfully. Disposal is explicit and idempotent;
+a disposed validation controller retains its final errors and state and no longer reacts to form
+commits.
 
 The complete, strictly compiled controller and validation recipe lives in
 [`examples/react/src/documentationRecipes.tsx`](../../examples/react/src/documentationRecipes.tsx).
