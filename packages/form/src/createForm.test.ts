@@ -226,6 +226,142 @@ describe('createForm', () => {
     expect(formNotifications).toEqual(['first', 'added']);
   });
 
+  it('runs reentrant updates in FIFO order from the latest committed snapshot', () => {
+    const queuedForm = createForm({ first: 0, second: 0, third: 0 });
+    const notifications: string[] = [];
+    const formatSnapshot = (values: typeof queuedForm.values) =>
+      `${values.first},${values.second},${values.third}`;
+
+    queuedForm.subscribeField('first', (newValue, oldValue) => {
+      notifications.push(`field:first:${oldValue}->${newValue}`);
+
+      if (newValue === 1) {
+        queuedForm.setValue('second', 1);
+        queuedForm.setValue('third', 1);
+        queuedForm.setValue('second', 1);
+      }
+    });
+    queuedForm.subscribeField('second', (newValue, oldValue) => {
+      notifications.push(`field:second:${oldValue}->${newValue}`);
+    });
+    queuedForm.subscribeField('third', (newValue, oldValue) => {
+      notifications.push(`field:third:${oldValue}->${newValue}`);
+    });
+    queuedForm.subscribe((values, prevValues) => {
+      const transition = `form:${formatSnapshot(prevValues)}->${formatSnapshot(values)}`;
+
+      notifications.push(`${transition};current:${formatSnapshot(queuedForm.values)}`);
+    });
+
+    queuedForm.setValue('first', 1);
+
+    expect(notifications).toEqual([
+      'field:first:0->1',
+      'form:0,0,0->1,0,0;current:1,0,0',
+      'field:second:0->1',
+      'form:1,0,0->1,1,0;current:1,1,0',
+      'field:third:0->1',
+      'form:1,1,0->1,1,1;current:1,1,1',
+    ]);
+  });
+
+  it('surfaces one listener failure after every listener observes the committed state', () => {
+    const failingForm = createForm({ first: 0, second: 0 });
+    const failure = new Error('first listener failed');
+    const notifications: string[] = [];
+    let thrown: unknown;
+
+    failingForm.subscribeField('first', () => {
+      notifications.push('field:first:failing');
+      throw failure;
+    });
+    failingForm.subscribeField('first', () => {
+      notifications.push('field:first:remaining');
+    });
+    failingForm.subscribeField('second', () => {
+      notifications.push('field:second');
+    });
+    failingForm.subscribe((values, prevValues) => {
+      notifications.push(
+        `form:${prevValues.first},${prevValues.second}->${values.first},${values.second}`,
+      );
+    });
+
+    try {
+      failingForm.setValues({ first: 1, second: 1 });
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBe(failure);
+    expect({
+      notifications,
+      values: failingForm.values,
+      prevValues: failingForm.prevValues,
+    }).toEqual({
+      notifications: [
+        'field:first:failing',
+        'field:first:remaining',
+        'field:second',
+        'form:0,0->1,1',
+      ],
+      values: { first: 1, second: 1 },
+      prevValues: { first: 0, second: 0 },
+    });
+  });
+
+  it('aggregates multiple listener failures after draining reentrant updates', () => {
+    const failingForm = createForm({ first: 0, second: 0 });
+    const fieldFailure = new Error('field listener failed');
+    const formFailure = new Error('form listener failed');
+    const notifications: string[] = [];
+    let thrown: unknown;
+
+    failingForm.subscribeField('first', () => {
+      notifications.push('field:first:failing');
+      failingForm.setValue('second', 1);
+      throw fieldFailure;
+    });
+    failingForm.subscribeField('first', () => {
+      notifications.push('field:first:remaining');
+    });
+    failingForm.subscribeField('second', () => {
+      notifications.push('field:second');
+    });
+    failingForm.subscribe((values, prevValues) => {
+      notifications.push(
+        `form:failing:${prevValues.first},${prevValues.second}->${values.first},${values.second}`,
+      );
+
+      if (prevValues.first === 0 && values.first === 1) {
+        throw formFailure;
+      }
+    });
+    failingForm.subscribe((values, prevValues) => {
+      notifications.push(
+        `form:remaining:${prevValues.first},${prevValues.second}->${values.first},${values.second}`,
+      );
+    });
+
+    try {
+      failingForm.setValue('first', 1);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    expect((thrown as AggregateError).errors).toEqual([fieldFailure, formFailure]);
+    expect(notifications).toEqual([
+      'field:first:failing',
+      'field:first:remaining',
+      'form:failing:0,0->1,0',
+      'form:remaining:0,0->1,0',
+      'field:second',
+      'form:failing:1,0->1,1',
+      'form:remaining:1,0->1,1',
+    ]);
+  });
+
   it('uses Object.is for field equality in both update methods', () => {
     const reference = { nested: true };
     const values = {
