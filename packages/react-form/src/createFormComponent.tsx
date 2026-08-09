@@ -2,60 +2,130 @@ import React, { useCallback, type ComponentType } from 'react';
 import type { Form, FormValues } from '@avinlab/form';
 import { useFormWatch } from './hooks/useFormWatch';
 
-export interface FormInputControlOptions {
-  valueAttrName: string;
-  getValue?: (event: any) => any;
-  onChangeAttrName: string;
+type StringKeyOf<T> = Extract<keyof T, string>;
+type DefaultKey<T, TKey extends string> = Extract<TKey, StringKeyOf<T>>;
+type ChangeEvent<TProps, TOnChangeAttrName extends keyof TProps> = NonNullable<
+  TProps[TOnChangeAttrName]
+> extends (...args: infer TArgs) => unknown
+  ? TArgs extends [infer TEvent, ...unknown[]]
+    ? TEvent
+    : never
+  : never;
+
+export interface FormInputControlOptions<
+  TProps extends object = Record<string, unknown>,
+  TValueAttrName extends StringKeyOf<TProps> = DefaultKey<TProps, 'value'>,
+  TOnChangeAttrName extends StringKeyOf<TProps> = DefaultKey<TProps, 'onChange'>,
+  TExtractedValue = ChangeEvent<TProps, TOnChangeAttrName>,
+> {
+  valueAttrName: TValueAttrName;
+  getValue?: (event: ChangeEvent<TProps, TOnChangeAttrName>) => TExtractedValue;
+  onChangeAttrName: TOnChangeAttrName;
 }
 
-const defaultFormInputControlOptions: FormInputControlOptions = {
-  valueAttrName: 'value',
-  onChangeAttrName: 'onChange',
-};
+interface FormControlOptions<
+  TValueAttrName extends string,
+  TOnChangeAttrName extends string,
+  TEvent,
+  TValue,
+> {
+  valueAttrName: TValueAttrName;
+  getValue?: (event: TEvent) => TValue;
+  onChangeAttrName: TOnChangeAttrName;
+}
 
-export const useFormControlProps = <T extends FormValues>(
-  form: Form<T>,
-  name: keyof T,
-  options: FormInputControlOptions,
-) => {
+type FormControlProps<
+  TValueAttrName extends string,
+  TOnChangeAttrName extends string,
+  TEvent,
+  TValue,
+> = Record<TValueAttrName, TValue> & Record<TOnChangeAttrName, (event: TEvent) => void>;
+
+export const useFormControlProps = <
+  TFormValues extends FormValues,
+  TFieldName extends keyof TFormValues,
+  TValueAttrName extends string,
+  TOnChangeAttrName extends string,
+  TEvent = TFormValues[TFieldName],
+>(
+  form: Form<TFormValues>,
+  name: TFieldName,
+  options: FormControlOptions<TValueAttrName, TOnChangeAttrName, TEvent, TFormValues[TFieldName]>,
+): FormControlProps<TValueAttrName, TOnChangeAttrName, TEvent, TFormValues[TFieldName]> => {
+  const { getValue, onChangeAttrName, valueAttrName } = options;
   const handleChange = useCallback(
-    (event: any) => {
-      const getValue = options.getValue || ((e: any) => e);
-      if (name) {
-        form.setValue(name, getValue(event));
-      }
+    (event: TEvent) => {
+      const value = getValue ? getValue(event) : (event as unknown as TFormValues[TFieldName]);
+      form.setValue(name, value);
     },
-    [form, name, options.getValue],
+    [form, getValue, name],
   );
 
   const value = useFormWatch(form, name);
 
-  return {
-    [options.valueAttrName]: value,
-    [options.onChangeAttrName]: handleChange,
+  const formControlProps = {
+    [valueAttrName]: value,
+    [onChangeAttrName]: handleChange,
   } satisfies Record<string, unknown>;
+
+  return formControlProps as FormControlProps<
+    TValueAttrName,
+    TOnChangeAttrName,
+    TEvent,
+    TFormValues[TFieldName]
+  >;
 };
 
-interface CommonFormProps<T extends FormValues> {
-  form: Form<T>;
-  name: keyof T;
-}
+type CompatibleFieldName<
+  TFormValues extends FormValues,
+  TProps extends object,
+  TValueAttrName extends keyof TProps,
+  TExtractedValue,
+> = {
+  [TFieldName in keyof TFormValues]-?: TFormValues[TFieldName] extends TProps[TValueAttrName]
+    ? TExtractedValue extends TFormValues[TFieldName]
+      ? TFieldName
+      : never
+    : never;
+}[keyof TFormValues];
 
-type FormComponentProps<T extends FormValues, P> = CommonFormProps<T> &
-  Omit<P, 'form' | 'name' | 'onChange' | 'value'>;
+export type FormComponentProps<
+  TFormValues extends FormValues,
+  TProps extends object,
+  TValueAttrName extends keyof TProps = DefaultKey<TProps, 'value'>,
+  TOnChangeAttrName extends keyof TProps = DefaultKey<TProps, 'onChange'>,
+  TExtractedValue = ChangeEvent<TProps, TOnChangeAttrName>,
+> = {
+  form: Form<TFormValues>;
+  name: CompatibleFieldName<TFormValues, TProps, TValueAttrName, TExtractedValue>;
+} & Omit<TProps, 'form' | 'name' | TValueAttrName | TOnChangeAttrName>;
 
-export function createFormComponent<P>(
-  Component: ComponentType<P>,
-  options: Partial<FormInputControlOptions> = {},
+export function createFormComponent<
+  TProps extends object,
+  TValueAttrName extends StringKeyOf<TProps> = DefaultKey<TProps, 'value'>,
+  TOnChangeAttrName extends StringKeyOf<TProps> = DefaultKey<TProps, 'onChange'>,
+  TExtractedValue = ChangeEvent<TProps, TOnChangeAttrName>,
+>(
+  Component: ComponentType<TProps>,
+  options: Partial<
+    FormInputControlOptions<TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue>
+  > = {},
 ) {
-  return function <T extends FormValues>({ form, name, ...rest }: FormComponentProps<T, P>) {
+  const valueAttrName = (options.valueAttrName ?? 'value') as TValueAttrName;
+  const onChangeAttrName = (options.onChangeAttrName ?? 'onChange') as TOnChangeAttrName;
+
+  return function <TFormValues extends FormValues>({
+    form,
+    name,
+    ...rest
+  }: FormComponentProps<TFormValues, TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue>) {
+    type TEvent = ChangeEvent<TProps, TOnChangeAttrName>;
     const formControlProps = useFormControlProps(form, name, {
-      ...defaultFormInputControlOptions,
-      ...options,
+      valueAttrName,
+      onChangeAttrName,
+      getValue: options.getValue as ((event: TEvent) => TFormValues[typeof name]) | undefined,
     });
 
-    return <Component {...(rest as P)} {...formControlProps} name={name as string} />;
+    return <Component {...(rest as TProps)} {...formControlProps} name={name as string} />;
   };
 }
-
-export type { FormComponentProps };
