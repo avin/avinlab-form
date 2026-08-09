@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { useForm } from './useForm';
 
 interface TestFormValues {
@@ -21,9 +21,11 @@ describe('useForm', () => {
     const { result, rerender } = renderHook(() => useForm(initialValues));
 
     const firstInstance = result.current;
+    act(() => firstInstance.setValue('name', 'Janet Doe'));
     rerender();
 
     // Check if the form instance is the same after re-render
     expect(result.current).toBe(firstInstance);
+    expect(result.current.values.name).toBe('Janet Doe');
   });
 });
