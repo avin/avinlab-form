@@ -2,9 +2,18 @@
   "name": "@avinlab/react-form",
   "type": "module",
   "version": "0.4.0",
-  "description": "",
+  "description": "React bindings for @avinlab/form with concurrent-safe selective subscriptions.",
   "author": "Avin Lambrero <avin.github@gmail.com> (https://github.com/avin/)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/avin/avinlab-form.git",
+    "directory": "packages/react-form"
+  },
+  "homepage": "https://github.com/avin/avinlab-form#readme",
+  "bugs": {
+    "url": "https://github.com/avin/avinlab-form/issues"
+  },
   "keywords": [
     "form",
     "react"
@@ -26,7 +35,9 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "cross-env MODE=prod tsup",

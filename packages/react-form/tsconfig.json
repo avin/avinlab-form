@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": "../..",
     "target": "es2018",
     "lib": ["esnext"],
     "module": "esnext",
@@ -10,6 +11,9 @@
     "esModuleInterop": true,
     "skipDefaultLibCheck": true,
     "skipLibCheck": true,
-    "jsx": "react"
+    "jsx": "react",
+    "paths": {
+      "@avinlab/form": ["packages/form/src/index.ts"]
+    }
   }
 }
