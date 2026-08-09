@@ -12,17 +12,12 @@ export const useFormValidation = <TFormErrors extends FormErrors, TFormValues ex
   form: Form<TFormValues>,
   validationFunc: ValidationFunction<TFormErrors, TFormValues>,
 ) => {
-  const firstTimeRef = useRef(true);
   const formValidationRef = useRef<FormValidation<TFormErrors, TFormValues> | null>(null);
   formValidationRef.current = formValidationRef.current || createFormValidation(form);
 
   const formValidation = formValidationRef.current!;
 
   formValidation.setValidation(validationFunc);
-  if (firstTimeRef.current) {
-    formValidation.validate();
-    firstTimeRef.current = false;
-  }
 
   const [, setRenderTick] = useState(0);
 
