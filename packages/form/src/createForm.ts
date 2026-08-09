@@ -3,15 +3,12 @@ type FormSnapshot<TFormValues extends FormValues> = Readonly<TFormValues>;
 
 declare const __DEV__: boolean;
 
-type FieldUpdateHandlers<T> = {
-  [K in keyof T]?: UpdateFieldHandler<T[K]>[];
-};
-
 export type UpdateHandler<TFormValues extends FormValues> = (
   values: FormSnapshot<TFormValues>,
   prevValues: FormSnapshot<TFormValues>,
 ) => void;
 type UpdateFieldHandler<T> = (newValue: T, oldValue: T) => void;
+type Unsubscribe = () => void;
 
 export interface Form<TFormValues extends FormValues> {
   readonly values: FormSnapshot<TFormValues>;
@@ -21,15 +18,32 @@ export interface Form<TFormValues extends FormValues> {
     value: TFormValues[TFieldName],
   ) => void;
   setValues: (values: TFormValues) => void;
+  /**
+   * Subscribes to commits that change this field. Listener membership is captured at the start of
+   * each successful commit, so subscription changes during notification apply to the next commit.
+   */
+  subscribeField: <TFieldName extends keyof TFormValues>(
+    fieldName: TFieldName,
+    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
+  ) => Unsubscribe;
+  /** @deprecated Prefer `subscribeField`, which returns its cleanup function. */
   onUpdateField: <TFieldName extends keyof TFormValues>(
     fieldName: TFieldName,
     cb: UpdateFieldHandler<TFormValues[TFieldName]>,
   ) => void;
+  /** @deprecated Keep the cleanup returned by `subscribeField` instead. */
   offUpdateField: <TFieldName extends keyof TFormValues>(
     fieldName: TFieldName,
     cb: UpdateFieldHandler<TFormValues[TFieldName]>,
   ) => void;
+  /**
+   * Subscribes to successful form commits. Listener membership is captured at the start of each
+   * commit, so subscription changes during notification apply to the next commit.
+   */
+  subscribe: (cb: UpdateHandler<TFormValues>) => Unsubscribe;
+  /** @deprecated Prefer `subscribe`, which returns its cleanup function. */
   onUpdate: (cb: UpdateHandler<TFormValues>) => void;
+  /** @deprecated Keep the cleanup returned by `subscribe` instead. */
   offUpdate: (cb: UpdateHandler<TFormValues>) => void;
 }
 
@@ -45,8 +59,9 @@ export const createForm = <TFormValues extends FormValues>(
 
   let values = createSnapshot(initialValues);
   let prevValues = createSnapshot(initialValues);
-  let _onUpdateHandlers: UpdateHandler<TFormValues>[] = [];
-  let _onUpdateFieldHandlers: FieldUpdateHandlers<TFormValues> = {};
+  const _onUpdateHandlers = new Set<UpdateHandler<TFormValues>>();
+  const _onUpdateFieldHandlers = new Map<string, Set<UpdateFieldHandler<any>>>();
+  const normalizeFieldName = (fieldName: keyof TFormValues) => String(fieldName);
 
   const commit = (nextValues: TFormValues) => {
     const nextFieldNames = Object.keys(nextValues) as (keyof TFormValues)[];
@@ -67,16 +82,24 @@ export const createForm = <TFormValues extends FormValues>(
 
     const committedPrevValues = values;
     const committedValues = createSnapshot(nextValues);
+    const fieldNotifications = changedFieldNames.map(
+      (fieldName) =>
+        [
+          fieldName,
+          [...(_onUpdateFieldHandlers.get(normalizeFieldName(fieldName)) || [])],
+        ] as const,
+    );
+    const formUpdateHandlers = [..._onUpdateHandlers];
     prevValues = committedPrevValues;
     values = committedValues;
 
-    changedFieldNames.forEach((fieldName) => {
-      (_onUpdateFieldHandlers[fieldName] || []).forEach((cb) => {
+    fieldNotifications.forEach(([fieldName, handlers]) => {
+      handlers.forEach((cb) => {
         cb(committedValues[fieldName], committedPrevValues[fieldName]);
       });
     });
 
-    _onUpdateHandlers.forEach((cb) => {
+    formUpdateHandlers.forEach((cb) => {
       cb(committedValues, committedPrevValues);
     });
   };
@@ -93,34 +116,52 @@ export const createForm = <TFormValues extends FormValues>(
     commit(newValues);
   };
 
+  const subscribeField = <TFieldName extends keyof TFormValues>(
+    fieldName: TFieldName,
+    cb: UpdateFieldHandler<TFormValues[TFieldName]>,
+  ) => {
+    const normalizedFieldName = normalizeFieldName(fieldName);
+    let handlers = _onUpdateFieldHandlers.get(normalizedFieldName);
+
+    if (!handlers) {
+      handlers = new Set();
+      _onUpdateFieldHandlers.set(normalizedFieldName, handlers);
+    }
+    handlers.add(cb);
+
+    return () => {
+      _onUpdateFieldHandlers.get(normalizedFieldName)?.delete(cb);
+    };
+  };
+
   const onUpdateField = <TFieldName extends keyof TFormValues>(
     fieldName: TFieldName,
     cb: UpdateFieldHandler<TFormValues[TFieldName]>,
   ) => {
-    if (!_onUpdateFieldHandlers[fieldName]) {
-      _onUpdateFieldHandlers[fieldName] = [];
-    }
-    _onUpdateFieldHandlers[fieldName]!.push(cb);
+    subscribeField(fieldName, cb);
   };
 
   const offUpdateField = <TFieldName extends keyof TFormValues>(
     fieldName: TFieldName,
     cb: UpdateFieldHandler<TFormValues[TFieldName]>,
   ) => {
-    if (!_onUpdateFieldHandlers[fieldName]) {
-      _onUpdateFieldHandlers[fieldName] = [];
-    }
-    _onUpdateFieldHandlers[fieldName] = _onUpdateFieldHandlers[fieldName]!.filter(
-      (handler) => handler !== cb,
-    );
+    _onUpdateFieldHandlers.get(normalizeFieldName(fieldName))?.delete(cb);
+  };
+
+  const subscribe = (cb: UpdateHandler<TFormValues>) => {
+    _onUpdateHandlers.add(cb);
+
+    return () => {
+      _onUpdateHandlers.delete(cb);
+    };
   };
 
   const onUpdate = (cb: UpdateHandler<TFormValues>) => {
-    _onUpdateHandlers.push(cb);
+    subscribe(cb);
   };
 
   const offUpdate = (cb: UpdateHandler<TFormValues>) => {
-    _onUpdateHandlers = _onUpdateHandlers.filter((handler) => handler !== cb);
+    _onUpdateHandlers.delete(cb);
   };
 
   return {
@@ -132,8 +173,10 @@ export const createForm = <TFormValues extends FormValues>(
     },
     setValue,
     setValues,
+    subscribeField,
     onUpdateField,
     offUpdateField,
+    subscribe,
     onUpdate,
     offUpdate,
   };
