@@ -5,20 +5,28 @@ export interface Example {
   id: string;
   title: string;
   summary: string;
+  tags: string[];
   api: string[];
   Component: ComponentType;
   source: string;
 }
 
 export function ExampleCard({ example, number }: { example: Example; number: number }) {
-  const { Component, api, id, source, summary, title } = example;
+  const { Component, api, id, source, summary, tags, title } = example;
 
   return (
     <article className="example-card" id={id}>
       <header className="example-header">
         <span className="example-number">{String(number).padStart(2, '0')}</span>
         <div>
-          <h3>{title}</h3>
+          <div className="example-title-row">
+            <h3>{title}</h3>
+            <div className="tag-list" aria-label="Example tags">
+              {tags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+          </div>
           <p>{summary}</p>
         </div>
       </header>
