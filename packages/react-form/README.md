@@ -176,8 +176,8 @@ function Submit({ result }: { result: ValidationResult<ProfileErrors> }) {
 }
 ```
 
-The full versions of every recipe above are strictly compiled in
-[`examples/react/src/documentationRecipes.tsx`](../../examples/react/src/documentationRecipes.tsx).
+Focused, interactive versions of these patterns are strictly compiled in
+[`examples/react/src/examples`](../../examples/react/src/examples).
 Run `npm run typecheck --workspace example-react` from the repository root to check them. See the
 [core controller contract](../form/README.md) for update, equality, subscription, and
 readonly-snapshot semantics.

@@ -1,59 +1,60 @@
-import { useEffect, useState } from 'react';
-import cn from 'clsx';
-import { CardForm } from './components/forms/CardForm.tsx';
-import { DebugForm } from './components/forms/DebugForm.tsx';
-import { HelperForm } from './components/forms/HelperForm.tsx';
-import { getQueryParamByName, setQueryParam } from './utils/queryParam.ts';
+import { ExampleCard } from './components/ExampleCard';
+import { sections } from './examples';
 
-const forms = [
-  {
-    label: 'Card Form',
-    key: 'card',
-  },
-  {
-    label: 'Debug Form',
-    key: 'debug',
-  },
-  {
-    label: 'Helper Form',
-    key: 'helper',
-  },
-];
+const exampleCount = sections.reduce((count, section) => count + section.examples.length, 0);
 
 export function App() {
-  const [currentForm, setCurrentForm] = useState(getQueryParamByName('form') || 'card');
-
-  const FormComponent = {
-    card: CardForm,
-    debug: DebugForm,
-    helper: HelperForm,
-  }[currentForm]!;
-
-  useEffect(() => {
-    setQueryParam('form', currentForm);
-  }, [currentForm]);
+  let exampleNumber = 0;
 
   return (
-    <div>
-      <div className="border-b border-b-gray-400 mb-4 p-4">
-        <ul className="flex space-x-4">
-          {forms.map(({ key, label }) => {
-            return (
-              <li key={key}>
-                <button
-                  className={cn('border rounded border-gray-300 px-4 py-2', {
-                    'bg-gray-300': key === currentForm,
-                  })}
-                  onClick={() => setCurrentForm(key)}
-                >
-                  {label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+    <>
+      <header className="site-header" id="top">
+        <nav className="topbar" aria-label="Main navigation">
+          <span className="wordmark">@avinlab/form</span>
+          <a className="repo-link" href="https://github.com/avin/avinlab-form">
+            GitHub ↗
+          </a>
+        </nav>
+      </header>
+
+      <div className="page-shell">
+        <aside className="section-nav" aria-label="Example sections">
+          <p>On this page</p>
+          {sections.map((section) => (
+            <a key={section.id} href={`#${section.id}`}>
+              {section.title}
+              <span>{section.examples.length}</span>
+            </a>
+          ))}
+        </aside>
+
+        <main>
+          {sections.map((section) => (
+            <section className="example-section" id={section.id} key={section.id}>
+              <header className="section-header">
+                <p className="eyebrow">{section.eyebrow}</p>
+                <h2>{section.title}</h2>
+                <p>{section.description}</p>
+              </header>
+
+              <div className="example-grid">
+                {section.examples.map((example) => {
+                  exampleNumber += 1;
+                  return <ExampleCard example={example} number={exampleNumber} key={example.id} />;
+                })}
+              </div>
+            </section>
+          ))}
+        </main>
       </div>
-      <FormComponent />
-    </div>
+
+      <footer>
+        <p>
+          {exampleCount} examples use the package source through Vite aliases, so they exercise the
+          current API.
+        </p>
+        <a href="#top">Back to top ↑</a>
+      </footer>
+    </>
   );
 }

@@ -54,8 +54,8 @@ Use `useFormWatch(form, field)` for one field or `useFormWatch(form)` for the wh
 Validation is one atomic readonly `{ status, errors }` snapshot, so the status and errors always
 describe the same validation run.
 
-The quick start is compiled as
-[`QuickStartProfileForm`](./examples/react/src/documentationRecipes.tsx). See the
+The same primitives are exercised by the focused examples in
+[`examples/react/src/examples`](./examples/react/src/examples). See the
 [`@avinlab/react-form` guide](./packages/react-form/README.md) for synchronization, watchers,
 validation, SSR, and lifecycle details, or the [`@avinlab/form` guide](./packages/form/README.md)
 for framework-independent usage and the advanced controller contract.

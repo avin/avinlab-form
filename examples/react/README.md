@@ -1,27 +1,28 @@
-# React example
+# React example catalog
 
-This application demonstrates uncontrolled inputs, generated controlled inputs, field and
-whole-form watchers and one complete synchronous validation result for
-`@avinlab/react-form`.
+An interactive, progressive reference for `@avinlab/form` and `@avinlab/react-form`. Each card
+demonstrates one technique and imports its own source with Vite's `?raw` query, so the code shown in
+the browser is exactly the code being executed.
 
-Every package imported directly by the source is declared in this workspace. The application and
-the documentation recipes in [`src/documentationRecipes.tsx`](./src/documentationRecipes.tsx) are
-checked with strict TypeScript:
+The catalog moves from common to rare cases:
 
-```sh
-npm run typecheck --workspace example-react
-```
+1. controlled and uncontrolled fields, snapshots, reset, and validation;
+2. React composition, generated controls, external synchronization, and render isolation;
+3. field and form subscriptions, cleanup, and previous snapshots;
+4. nested values, dynamic watchers, core controllers, validation lifecycle, and no-op semantics.
 
-The quick-start and migration recipes also compile against the built package-root declarations,
-and the core migration recipe executes its runtime assertions:
+Every runnable example lives in [`src/examples`](./src/examples). Shared code is limited to the
+catalog card and page shell; examples do not depend on one another.
 
-```sh
-npm run build
-npm run check:documentation --workspace example-react
-```
-
-Run the interactive application from the repository root:
+Run it from the repository root:
 
 ```sh
 npm run dev --workspace example-react
+```
+
+Verify every example with strict TypeScript and a production build:
+
+```sh
+npm run typecheck --workspace example-react
+npm run build --workspace example-react
 ```

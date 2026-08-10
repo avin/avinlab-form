@@ -8,5 +8,5 @@
     "strict": true,
     "target": "ES2022"
   },
-  "files": ["documentation-recipes.tsx", "migration-recipes.tsx"]
+  "include": ["example-*.tsx"]
 }

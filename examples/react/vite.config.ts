@@ -1,11 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import localhostCerts from 'vite-plugin-localhost-certs';
 import { fileURLToPath, URL } from 'node:url';
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), localhostCerts()],
+  plugins: [react()],
   resolve: {
     alias: {
       '@avinlab/form': fileURLToPath(new URL('../../packages/form/src/index.ts', import.meta.url)),
