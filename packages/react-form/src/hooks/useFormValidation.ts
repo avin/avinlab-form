@@ -112,21 +112,3 @@ export const useFormValidation = <TFormErrors extends FormErrors, TFormValues ex
 
   return result;
 };
-
-export const useFormValidationError = <
-  TFormErrors extends FormErrors,
-  TFormValues extends FormValues,
-  TFieldName extends keyof TFormErrors,
->(
-  form: Form<TFormValues>,
-  validator: ValidationFunction<TFormErrors, TFormValues>,
-  fieldName: TFieldName,
-): TFormErrors[TFieldName] | undefined => useFormValidation(form, validator).errors[fieldName];
-
-export const useFormValidationStatus = <
-  TFormErrors extends FormErrors,
-  TFormValues extends FormValues,
->(
-  form: Form<TFormValues>,
-  validator: ValidationFunction<TFormErrors, TFormValues>,
-) => useFormValidation(form, validator).status;

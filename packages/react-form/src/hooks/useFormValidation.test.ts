@@ -4,7 +4,7 @@ import { hydrateRoot } from 'react-dom/client';
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createForm, type Form, type ValidationFunction } from '@avinlab/form';
-import { useFormValidation, useFormValidationError, useFormValidationStatus } from '../index';
+import { useFormValidation } from '../index';
 
 interface TestFormValues {
   name?: string;
@@ -93,15 +93,20 @@ describe('useFormValidation', () => {
     await act(async () => root.unmount());
   });
 
-  it('updates once for each real form commit and skips equivalent results', () => {
+  it('owns one validation derivation and validates once for each real form commit', () => {
+    const subscribe = vi.spyOn(form, 'subscribe');
     let renderCount = 0;
     const { result } = renderHook(() => {
       renderCount += 1;
       return useFormValidation(form, validator);
     });
 
+    expect(subscribe).toHaveBeenCalledOnce();
+    expect(validator).toHaveBeenCalledOnce();
+
     act(() => form.setValue('age', 16));
     expect(validator).toHaveBeenCalledTimes(2);
+    expect(subscribe).toHaveBeenCalledOnce();
     expect(renderCount).toBe(2);
 
     act(() => form.setValue('age', 20));
@@ -173,15 +178,6 @@ describe('useFormValidation', () => {
     expect(nextRequestStatuses).toEqual(['unvalidated', 'invalid']);
     expect(result.current.errors).toEqual({ name: 'New rule' });
     expect(nextValidator).toHaveBeenCalledOnce();
-  });
-
-  it('keeps the transitional selective readers aligned with the complete result', () => {
-    const { result } = renderHook(() => ({
-      error: useFormValidationError(form, validator, 'name'),
-      status: useFormValidationStatus(form, validator),
-    }));
-
-    expect(result.current).toEqual({ error: 'Name is required', status: 'invalid' });
   });
 
   it('does not subscribe or validate an abandoned request during render', () => {

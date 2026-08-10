@@ -145,8 +145,8 @@ expose the hook-owned controller, mutation methods, subscriptions, or disposal. 
 renders are unvalidated. A changed form or validator also renders an empty unvalidated result until
 that exact request commits and validates. Only `valid` means validation completed successfully.
 
-`useFormValidationError` reads one error, while `useFormValidationStatus` reads the status using the
-same terminology as the complete result.
+Use one complete result for a validation subtree. Pass it to child fields through ordinary props or
+application-owned context; the library does not create additional validation readers or providers.
 
 ```tsx
 type ProfileErrors = Partial<Record<keyof ProfileValues, string>>;
@@ -158,21 +158,20 @@ const validateProfile = (values: Readonly<ProfileValues>): ProfileErrors => ({
 
 function Validation({ form }: { form: Form<ProfileValues> }) {
   const result = useFormValidation<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <output>{JSON.stringify(result)}</output>;
-}
-
-function AgeError({ form }: { form: Form<ProfileValues> }) {
-  const error = useFormValidationError<ProfileErrors, ProfileValues, 'age'>(
-    form,
-    validateProfile,
-    'age',
+  return (
+    <>
+      <AgeError result={result} />
+      <Submit result={result} />
+    </>
   );
-  return <output>{error}</output>;
 }
 
-function Submit({ form }: { form: Form<ProfileValues> }) {
-  const status = useFormValidationStatus<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <button disabled={status !== 'valid'}>Save</button>;
+function AgeError({ result }: { result: ValidationResult<ProfileErrors> }) {
+  return <output>{result.errors.age}</output>;
+}
+
+function Submit({ result }: { result: ValidationResult<ProfileErrors> }) {
+  return <button disabled={result.status !== 'valid'}>Save</button>;
 }
 ```
 
