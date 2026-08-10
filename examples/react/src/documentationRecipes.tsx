@@ -1,16 +1,6 @@
-import { useEffect, type ChangeEvent, type InputHTMLAttributes } from 'react';
-import {
-  createForm,
-  createFormValidation,
-  type Form,
-  type ValidationResult,
-} from '@avinlab/form';
-import {
-  createFormComponent,
-  useForm,
-  useFormValidation,
-  useFormWatch,
-} from '@avinlab/react-form';
+import { useCallback, useEffect, type ChangeEvent, type InputHTMLAttributes } from 'react';
+import { createForm, createFormValidation, type Form, type ValidationResult } from '@avinlab/form';
+import { createFormComponent, useForm, useFormValidation, useFormWatch } from '@avinlab/react-form';
 
 interface ProfileValues {
   name: string;
@@ -20,10 +10,40 @@ interface ProfileValues {
 
 type ProfileErrors = Partial<Record<keyof ProfileValues, string>>;
 
+type QuickStartValues = { name: string };
+type QuickStartErrors = { name?: string };
+
 const validateProfile = (values: Readonly<ProfileValues>): ProfileErrors => ({
   name: values.name ? undefined : 'Name is required',
   age: values.age >= 18 ? undefined : 'Must be at least 18',
 });
+
+/** The complete primary README workflow, kept under strict TypeScript checking. */
+export function QuickStartProfileForm() {
+  const form = useForm<QuickStartValues>({ name: '' });
+  const name = useFormWatch(form, 'name');
+  const validate = useCallback(
+    (values: Readonly<QuickStartValues>): QuickStartErrors => ({
+      name: values.name ? undefined : 'Name is required',
+    }),
+    [],
+  );
+  const result = useFormValidation<QuickStartErrors, QuickStartValues>(form, validate);
+
+  return (
+    <form>
+      <label>
+        Name
+        <input
+          value={name}
+          onChange={(event) => form.setValue('name', event.currentTarget.value)}
+        />
+      </label>
+      {result.errors.name && <span>{result.errors.name}</span>}
+      <button disabled={result.status !== 'valid'}>Save</button>
+    </form>
+  );
+}
 
 /** Initial values are one-time; replacing them from an external source is explicit. */
 export function SynchronizedProfileForm({

@@ -66,11 +66,12 @@ function ProfileForm() {
 The age recipe intentionally updates `age`, converts the DOM string to a number, and displays an
 `age` error in the validation example below.
 
-## Generated controlled components
+## Optional generated controlled components
 
-`createFormComponent` builds a controlled component that watches only its selected field. Its types
-connect the field value to the configured value prop, change prop, event, and extractor result. The
-binding-owned props are not accepted from the caller.
+`createFormComponent` is optional convenience for component libraries. It builds a controlled
+component that watches only its selected field. Its types connect the field value to the configured
+value prop, change prop, event, and extractor result. The binding-owned props are not accepted from
+the caller.
 
 ```tsx
 const FormTextInput = createFormComponent(TextInput, {
@@ -180,3 +181,18 @@ The full versions of every recipe above are strictly compiled in
 Run `npm run typecheck --workspace example-react` from the repository root to check them. See the
 [core controller contract](../form/README.md) for update, equality, subscription, and
 readonly-snapshot semantics.
+
+## Advanced React contract
+
+`useFormWatch` uses the React 18 external-store contract. Field watchers render only for changes to
+their selected field; whole-form watchers render once per real commit; neither renders for a no-op.
+Changing the form or selected field reads the replacement source immediately, then commit cleanup
+releases the old subscription. The current form snapshot is also the watcher server snapshot, so
+SSR and hydration require the same initial values on server and client.
+
+`useFormValidation` performs no validation or subscription side effect for an abandoned render.
+Initial and server snapshots are empty and unvalidated. A committed form or validator switch
+releases the previous controller, validates the requested current form, and publishes only that
+request's result. Unmount and React Strict Mode cleanup release every underlying subscription. One
+mounted hook creates one derived validation controller and performs one validation per real form
+commit; passing the result to children avoids duplicate validation work.

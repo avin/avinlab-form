@@ -10,7 +10,7 @@ Read snapshots imperatively and mutate only through the controller.
 npm install @avinlab/form
 ```
 
-## Controller contract
+## Advanced controller contract
 
 - `setValue` and full-replacement `setValues` compare every top-level field with `Object.is`.
   `NaN` is therefore equal to `NaN`, while `0` and `-0` are different. Objects, arrays, dates,
@@ -98,3 +98,12 @@ retains its final result and no longer reacts to form commits.
 
 The complete, strictly compiled controller and validation recipe lives in
 [`examples/react/src/documentationRecipes.tsx`](../../examples/react/src/documentationRecipes.tsx).
+
+### Advanced validation lifecycle
+
+Core validation subscribes to the supplied form until `dispose()` is called. `setValidator`
+recalculates synchronously, `validate()` explicitly repeats the current validator, and equivalent
+complete results preserve their reference without notifying. A validator exception first publishes
+the shared empty unvalidated result and then rethrows. Subscription cleanup and disposal are
+idempotent; after disposal, validation retains its final result and ignores validation, validator,
+subscription, and form-update requests.
