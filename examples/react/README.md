@@ -12,6 +12,14 @@ checked with strict TypeScript:
 npm run typecheck --workspace example-react
 ```
 
+The quick-start and migration recipes also compile against the built package-root declarations,
+and the core migration recipe executes its runtime assertions:
+
+```sh
+npm run build
+npm run check:documentation --workspace example-react
+```
+
 Run the interactive application from the repository root:
 
 ```sh

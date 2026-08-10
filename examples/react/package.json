@@ -7,7 +7,8 @@
     "dev": "vite --port=3001",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "check:documentation": "tsc --noEmit -p tsconfig.documentation.json && node migrationCoreRecipe.mjs"
   },
   "dependencies": {
     "@avinlab/form": "file:../../packages/form",
