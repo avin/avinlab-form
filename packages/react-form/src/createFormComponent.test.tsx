@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { createForm } from '@avinlab/form';
 import React from 'react';
+import { renderToString } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import * as ReactForm from './index';
 
@@ -18,6 +19,17 @@ const TextInput = ({ label, value, onChange }: TextInputProps) => (
     value={value}
     onChange={(event) => onChange((event.currentTarget as unknown as { value: string }).value)}
   />
+);
+
+const RefTextInput = React.forwardRef<HTMLInputElement, TextInputProps>(
+  ({ label, value, onChange }, ref) => (
+    <input
+      ref={ref}
+      aria-label={label}
+      value={value}
+      onChange={(event) => onChange((event.currentTarget as unknown as { value: string }).value)}
+    />
+  ),
 );
 
 interface ToggleProps {
@@ -89,6 +101,93 @@ describe('createFormComponent', () => {
       'next@example.com',
     );
     expect(renderSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('forwards a DOM ref while retaining the controlled field binding', () => {
+    const FormTextInput = createFormComponent(RefTextInput);
+    const form = createForm({ email: 'first@example.com' });
+    const ref = React.createRef<HTMLInputElement>();
+
+    render(<FormTextInput ref={ref} form={form} name="email" label="Email" />);
+
+    expect(ref.current).toBe(screen.getByLabelText('Email'));
+    const input = ref.current as unknown as {
+      focus: () => void;
+      select: () => void;
+      value: string;
+    };
+    input.focus();
+    input.select();
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'next@example.com' } });
+
+    expect(form.values.email).toBe('next@example.com');
+    expect(input.value).toBe('next@example.com');
+  });
+
+  it('preserves a wrapped component imperative handle', () => {
+    interface TextInputHandle {
+      selectText: () => void;
+    }
+
+    const selectText = vi.fn();
+    const ImperativeTextInput = React.forwardRef<TextInputHandle, TextInputProps>((props, ref) => {
+      React.useImperativeHandle(ref, () => ({ selectText }));
+
+      return <TextInput {...props} />;
+    });
+    const FormTextInput = createFormComponent(ImperativeTextInput);
+    const form = createForm({ email: 'first@example.com' });
+    const ref = React.createRef<TextInputHandle>();
+
+    render(<FormTextInput ref={ref} form={form} name="email" label="Email" />);
+    ref.current?.selectText();
+
+    expect(selectText).toHaveBeenCalledOnce();
+  });
+
+  it('preserves callback ref cleanup on unmount', () => {
+    const FormTextInput = createFormComponent(RefTextInput);
+    const form = createForm({ email: 'first@example.com' });
+    const refValues: Array<HTMLInputElement | null> = [];
+    const { unmount } = render(
+      <FormTextInput
+        ref={(value) => refValues.push(value)}
+        form={form}
+        name="email"
+        label="Email"
+      />,
+    );
+
+    expect(refValues).toEqual([screen.getByLabelText('Email')]);
+
+    unmount();
+
+    expect(refValues).toEqual([expect.anything(), null]);
+  });
+
+  it('has a display name derived from the wrapped component', () => {
+    const NamedTextInput = React.forwardRef<HTMLInputElement, TextInputProps>((props, ref) => (
+      <RefTextInput {...props} ref={ref} />
+    ));
+    NamedTextInput.displayName = 'NamedTextInput';
+
+    const FormTextInput = createFormComponent(NamedTextInput);
+
+    expect(FormTextInput.displayName).toBe('FormComponent(NamedTextInput)');
+  });
+
+  it('does not invoke refs while rendering on the server', () => {
+    const FormTextInput = createFormComponent(RefTextInput);
+    const form = createForm({ email: 'first@example.com' });
+    const ref = vi.fn();
+
+    const markup = renderToString(
+      <FormTextInput ref={ref} form={form} name="email" label="Email" />,
+    );
+
+    expect(markup).toContain('value="first@example.com"');
+    expect(ref).not.toHaveBeenCalled();
   });
 
   it('updates fields whose keys are an empty string or zero', () => {
@@ -242,5 +341,84 @@ describe('createFormComponent', () => {
 
     expect(validBindings).toHaveLength(5);
     expect(rejectedBindings).toHaveLength(7);
+  });
+
+  it('exposes precise ref targets only for components that support refs', () => {
+    interface TextInputHandle {
+      selectText: () => void;
+    }
+
+    const ImperativeTextInput = React.forwardRef<TextInputHandle, TextInputProps>(() => null);
+    const ImperativeAmountInput = React.forwardRef<TextInputHandle, AmountInputProps>(() => null);
+    class ClassTextInput extends React.Component<TextInputProps> {}
+
+    const FormDomTextInput = createFormComponent(RefTextInput);
+    const FormImperativeTextInput = createFormComponent(ImperativeTextInput);
+    const FormImperativeAmountInput = createFormComponent(ImperativeAmountInput, {
+      valueAttrName: 'amount',
+      onChangeAttrName: 'onAmountChange',
+      getValue: (event) => Number(event.detail),
+    });
+    const FormClassTextInput = createFormComponent(ClassTextInput);
+    const FormFunctionTextInput = createFormComponent(TextInput);
+    const ExplicitFormTextInput = createFormComponent<TextInputProps>(TextInput);
+    const form = createForm({ email: '' });
+    const validBindings = [
+      <FormDomTextInput
+        key="dom"
+        ref={React.createRef<HTMLInputElement>()}
+        form={form}
+        name="email"
+        label="DOM"
+      />,
+      <FormImperativeTextInput
+        key="handle"
+        ref={React.createRef<TextInputHandle>()}
+        form={form}
+        name="email"
+        label="Handle"
+      />,
+      <FormImperativeAmountInput
+        key="custom-handle"
+        ref={React.createRef<TextInputHandle>()}
+        form={createForm({ total: 0 })}
+        name="total"
+        label="Custom handle"
+      />,
+      <FormClassTextInput
+        key="class"
+        ref={React.createRef<ClassTextInput>()}
+        form={form}
+        name="email"
+        label="Class"
+      />,
+      <ExplicitFormTextInput
+        key="explicit"
+        form={form}
+        name="email"
+        label="Explicit props generic"
+      />,
+    ];
+    const rejectedBindings = [
+      <FormImperativeTextInput
+        key="invalid-handle"
+        // @ts-expect-error The generated ref target is the declared imperative handle.
+        ref={React.createRef<{ focus: () => void }>()}
+        form={form}
+        name="email"
+        label="Invalid handle"
+      />,
+      <FormFunctionTextInput
+        key="function"
+        // @ts-expect-error Ordinary React 18 function components do not accept refs.
+        ref={React.createRef<HTMLInputElement>()}
+        form={form}
+        name="email"
+        label="Function"
+      />,
+    ];
+
+    expect(validBindings).toHaveLength(5);
+    expect(rejectedBindings).toHaveLength(2);
   });
 });

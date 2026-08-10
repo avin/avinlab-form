@@ -3,6 +3,7 @@
   "compilerOptions": {
     "baseUrl": "..",
     "jsx": "react-jsx",
+    "lib": ["esnext", "dom"],
     "module": "esnext",
     "moduleResolution": "bundler",
     "noEmit": true,
