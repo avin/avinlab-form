@@ -23,13 +23,17 @@ const packages = [
       'createForm',
       'createFormValidation',
     ],
+    dependencies: {},
     name: '@avinlab/form',
+    peerDependencies: {},
     repositoryDirectory: 'packages/form',
   },
   {
     directory: 'packages/react-form',
     declarationExports: ['createFormComponent', 'useForm', 'useFormValidation', 'useFormWatch'],
+    dependencies: { '@avinlab/form': '^0.5.0' },
     name: '@avinlab/react-form',
+    peerDependencies: { react: '>=18.0.0', 'react-dom': '>=18.0.0' },
     repositoryDirectory: 'packages/react-form',
   },
 ];
@@ -67,6 +71,24 @@ const removedDeclarationNames = [
   'useFormValidationState',
   'useFormValidationStatus',
 ];
+
+const assertDeclarationContract = (declaration, packageDefinition, declarationFile) => {
+  const declarationExports = [...declaration.matchAll(/export \{ ([^}]+) \};/g)]
+    .flatMap(([, names]) => names.split(', '))
+    .sort();
+  assert.deepEqual(
+    declarationExports,
+    [...packageDefinition.declarationExports].sort(),
+    `${packageDefinition.name} ${declarationFile} must expose exactly the final package-root contract`,
+  );
+  for (const removedName of removedDeclarationNames) {
+    assert.equal(
+      declaration.includes(removedName),
+      false,
+      `${packageDefinition.name} ${declarationFile} must not contain removed public name ${removedName}`,
+    );
+  }
+};
 
 const run = (command, args, cwd) => {
   const result = spawnSync(command, args, {
@@ -118,6 +140,8 @@ try {
     assert.equal(manifest.bugs?.url, 'https://github.com/avin/avinlab-form/issues');
     assert.deepEqual([...manifest.files].sort(), ['LICENSE', 'README.md', 'dist']);
     assert.deepEqual(Object.keys(manifest.exports).sort(), ['.', './package.json']);
+    assert.deepEqual(manifest.dependencies ?? {}, packageDefinition.dependencies);
+    assert.deepEqual(manifest.peerDependencies ?? {}, packageDefinition.peerDependencies);
 
     if (manifest.name === '@avinlab/react-form') {
       assert.equal(manifest.peerDependencies.react, '>=18.0.0');
@@ -142,21 +166,9 @@ try {
       expectedPackageFiles,
       `${manifest.name} tarball must contain only the declared public entry point and package docs`,
     );
-    const declaration = await readFile(path.join(packageDirectory, 'dist/index.d.ts'), 'utf8');
-    const declarationExports = [...declaration.matchAll(/export \{ ([^}]+) \};/g)]
-      .flatMap(([, names]) => names.split(', '))
-      .sort();
-    assert.deepEqual(
-      declarationExports,
-      [...packageDefinition.declarationExports].sort(),
-      `${manifest.name} declarations must expose exactly the final package-root contract`,
-    );
-    for (const removedName of removedDeclarationNames) {
-      assert.equal(
-        declaration.includes(removedName),
-        false,
-        `${manifest.name} declarations must not contain removed public name ${removedName}`,
-      );
+    for (const declarationFile of ['dist/index.d.ts', 'dist/index.d.cts']) {
+      const declaration = await readFile(path.join(packageDirectory, declarationFile), 'utf8');
+      assertDeclarationContract(declaration, packageDefinition, declarationFile);
     }
 
     const bundleFiles = ['dist/index.cjs', 'dist/index.js'];
