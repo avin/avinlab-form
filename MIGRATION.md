@@ -126,10 +126,11 @@ V5 copies the object returned by a validator, removes top-level properties whose
 mutated. Return a new object as usual; do not rely on validation deleting `undefined` properties
 from an object retained by application code.
 
-If a completed validation has the same status and the same top-level error keys and values under
-`Object.is`, the complete `result` reference is preserved and subscribers are not notified. A form
-commit can therefore run validation without producing a validation notification when its normalized
-result is equivalent.
+If a completed validation has the same status and deeply structurally equal normalized errors, the
+complete `result` reference is preserved and subscribers are not notified. Independently created
+nested objects and arrays with the same contents are equivalent; error structures must be acyclic.
+A form commit can therefore run validation without producing a validation notification when its
+normalized result is equivalent.
 
 ### Complete-result subscriptions and cleanup
 

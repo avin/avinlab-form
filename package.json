@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preinstall": "npx -y only-allow npm",
     "prepare": "simple-git-hooks",
-    "test": "lerna run test --ignore example-*",
+    "test": "lerna run test",
     "typecheck": "npm run typecheck:workspaces && npm run typecheck:contracts",
     "typecheck:workspaces": "npm run typecheck --workspaces --if-present",
     "typecheck:contracts": "tsc --noEmit -p type-tests/tsconfig.json",

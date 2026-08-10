@@ -112,6 +112,38 @@ describe('createFormValidation', () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
+  it('retains the result for independently created deeply equal errors', () => {
+    interface NestedErrors {
+      name?: {
+        message: string;
+        reasons: string[];
+      };
+    }
+
+    const invalidForm = createForm({ name: '', age: 30 });
+    const returnedNameErrors: NonNullable<NestedErrors['name']>[] = [];
+    const validator = vi.fn((): NestedErrors => {
+      const nameError = {
+        message: 'Name is required',
+        reasons: ['empty', 'required'],
+      };
+      returnedNameErrors.push(nameError);
+
+      return { name: nameError };
+    });
+    const validation = createFormValidation(invalidForm, validator);
+    const initialResult = validation.result;
+    const listener = vi.fn();
+    validation.subscribe(listener);
+
+    invalidForm.setValue('age', 31);
+
+    expect(validator).toHaveBeenCalledTimes(2);
+    expect(returnedNameErrors[1]).not.toBe(returnedNameErrors[0]);
+    expect(validation.result).toBe(initialResult);
+    expect(listener).not.toHaveBeenCalled();
+  });
+
   it('isolates its result from a shared mutable errors object', () => {
     const sharedErrors: FormFieldErrors = { name: 'Name is required' };
     const validation = createFormValidation(form, () => sharedErrors);

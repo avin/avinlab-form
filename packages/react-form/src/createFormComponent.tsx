@@ -4,12 +4,16 @@ import { useFormWatch } from './hooks/useFormWatch';
 
 type StringKeyOf<T> = Extract<keyof T, string>;
 type DefaultKey<T, TKey extends string> = Extract<TKey, StringKeyOf<T>>;
-type ChangeEvent<TProps, TOnChangeAttrName extends keyof TProps> = NonNullable<
+type ChangeArgs<TProps, TOnChangeAttrName extends keyof TProps> = NonNullable<
   TProps[TOnChangeAttrName]
 > extends (...args: infer TArgs) => unknown
-  ? TArgs extends [infer TEvent, ...unknown[]]
-    ? TEvent
-    : never
+  ? TArgs
+  : never;
+type ChangeEvent<TProps, TOnChangeAttrName extends keyof TProps> = ChangeArgs<
+  TProps,
+  TOnChangeAttrName
+> extends [infer TEvent, ...unknown[]]
+  ? TEvent
   : never;
 
 interface FormComponentOptions<
@@ -19,43 +23,25 @@ interface FormComponentOptions<
   TExtractedValue = ChangeEvent<TProps, TOnChangeAttrName>,
 > {
   valueAttrName?: TValueAttrName;
-  getValue?: (event: ChangeEvent<TProps, TOnChangeAttrName>) => TExtractedValue;
+  getValue?: (...args: ChangeArgs<TProps, TOnChangeAttrName>) => TExtractedValue;
   onChangeAttrName?: TOnChangeAttrName;
 }
 
-interface FormControlOptions<
-  TValueAttrName extends string,
-  TOnChangeAttrName extends string,
-  TEvent,
-  TValue,
-> {
-  valueAttrName: TValueAttrName;
-  getValue?: (event: TEvent) => TValue;
-  onChangeAttrName: TOnChangeAttrName;
+interface RuntimeFormComponentOptions {
+  valueAttrName: string;
+  getValue?: (...args: any[]) => any;
+  onChangeAttrName: string;
 }
 
-type FormControlProps<
-  TValueAttrName extends string,
-  TOnChangeAttrName extends string,
-  TEvent,
-  TValue,
-> = Record<TValueAttrName, TValue> & Record<TOnChangeAttrName, (event: TEvent) => void>;
-
-const useFormControlProps = <
-  TFormValues extends FormValues,
-  TFieldName extends keyof TFormValues,
-  TValueAttrName extends string,
-  TOnChangeAttrName extends string,
-  TEvent = TFormValues[TFieldName],
->(
-  form: Form<TFormValues>,
-  name: TFieldName,
-  options: FormControlOptions<TValueAttrName, TOnChangeAttrName, TEvent, TFormValues[TFieldName]>,
-): FormControlProps<TValueAttrName, TOnChangeAttrName, TEvent, TFormValues[TFieldName]> => {
+const useFormControlProps = (
+  form: Form<any>,
+  name: keyof any,
+  options: RuntimeFormComponentOptions,
+) => {
   const { getValue, onChangeAttrName, valueAttrName } = options;
   const handleChange = useCallback(
-    (event: TEvent) => {
-      const value = getValue ? getValue(event) : (event as unknown as TFormValues[TFieldName]);
+    (...args: any[]) => {
+      const value = getValue ? getValue(...args) : args[0];
       form.setValue(name, value);
     },
     [form, getValue, name],
@@ -66,14 +52,9 @@ const useFormControlProps = <
   const formControlProps = {
     [valueAttrName]: value,
     [onChangeAttrName]: handleChange,
-  } satisfies Record<string, unknown>;
+  };
 
-  return formControlProps as FormControlProps<
-    TValueAttrName,
-    TOnChangeAttrName,
-    TEvent,
-    TFormValues[TFieldName]
-  >;
+  return formControlProps;
 };
 
 type CompatibleFieldName<
@@ -100,6 +81,21 @@ type FormComponentProps<
   name: CompatibleFieldName<TFormValues, TProps, TValueAttrName, TExtractedValue>;
 } & Omit<TProps, 'form' | 'name' | TValueAttrName | TOnChangeAttrName>;
 
+type FormComponent<
+  TProps extends object,
+  TValueAttrName extends keyof TProps,
+  TOnChangeAttrName extends keyof TProps,
+  TExtractedValue,
+> = <TFormValues extends FormValues>(
+  props: FormComponentProps<
+    TFormValues,
+    TProps,
+    TValueAttrName,
+    TOnChangeAttrName,
+    TExtractedValue
+  >,
+) => React.ReactElement;
+
 export function createFormComponent<
   TProps extends object,
   TValueAttrName extends StringKeyOf<TProps> = DefaultKey<TProps, 'value'>,
@@ -107,23 +103,22 @@ export function createFormComponent<
   TExtractedValue = ChangeEvent<TProps, TOnChangeAttrName>,
 >(
   Component: ComponentType<TProps>,
-  options: FormComponentOptions<TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue> = {},
+  options?: FormComponentOptions<TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue>,
+): FormComponent<TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue>;
+export function createFormComponent(
+  Component: ComponentType<any>,
+  options: Partial<RuntimeFormComponentOptions> = {},
 ) {
-  const valueAttrName = (options.valueAttrName ?? 'value') as TValueAttrName;
-  const onChangeAttrName = (options.onChangeAttrName ?? 'onChange') as TOnChangeAttrName;
+  const valueAttrName = options.valueAttrName ?? 'value';
+  const onChangeAttrName = options.onChangeAttrName ?? 'onChange';
 
-  return function <TFormValues extends FormValues>({
-    form,
-    name,
-    ...rest
-  }: FormComponentProps<TFormValues, TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue>) {
-    type TEvent = ChangeEvent<TProps, TOnChangeAttrName>;
+  return function FormComponent({ form, name, ...rest }: any) {
     const formControlProps = useFormControlProps(form, name, {
       valueAttrName,
       onChangeAttrName,
-      getValue: options.getValue as ((event: TEvent) => TFormValues[typeof name]) | undefined,
+      getValue: options.getValue,
     });
 
-    return <Component {...(rest as TProps)} {...formControlProps} name={name as string} />;
+    return <Component {...rest} {...formControlProps} name={name} />;
   };
 }
