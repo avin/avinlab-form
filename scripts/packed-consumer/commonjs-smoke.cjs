@@ -1,6 +1,16 @@
 const assert = require('node:assert/strict');
-const { createForm } = require('@avinlab/form');
-const { useForm, useFormWatch } = require('@avinlab/react-form');
+const formPackage = require('@avinlab/form');
+const reactFormPackage = require('@avinlab/react-form');
+const { createForm } = formPackage;
+const { useForm, useFormWatch } = reactFormPackage;
+
+assert.deepEqual(Object.keys(formPackage).sort(), ['createForm', 'createFormValidation']);
+assert.deepEqual(Object.keys(reactFormPackage).sort(), [
+  'createFormComponent',
+  'useForm',
+  'useFormValidation',
+  'useFormWatch',
+]);
 
 const form = createForm({ name: 'Ada' });
 assert.equal(form.values.name, 'Ada');

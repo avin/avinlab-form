@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFile, lstat, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, lstat, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -11,11 +11,24 @@ const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const packages = [
   {
     directory: 'packages/form',
+    declarationExports: [
+      'Form',
+      'FormErrors',
+      'FormValidation',
+      'FormValues',
+      'UpdateHandler',
+      'ValidationFunction',
+      'ValidationResult',
+      'ValidationStatus',
+      'createForm',
+      'createFormValidation',
+    ],
     name: '@avinlab/form',
     repositoryDirectory: 'packages/form',
   },
   {
     directory: 'packages/react-form',
+    declarationExports: ['createFormComponent', 'useForm', 'useFormValidation', 'useFormWatch'],
     name: '@avinlab/react-form',
     repositoryDirectory: 'packages/react-form',
   },
@@ -39,7 +52,20 @@ const fixtureFiles = [
   'esm-smoke.mjs',
   'react-contract.mjs',
   'tsconfig.bundler.json',
+  'tsconfig.documentation.json',
   'tsconfig.nodenext.json',
+];
+const repositoryFixtures = [
+  ['examples/react/migrationCoreRecipe.mjs', 'migration-core-recipe.mjs'],
+  ['examples/react/src/documentationRecipes.tsx', 'documentation-recipes.tsx'],
+  ['examples/react/src/migrationRecipes.tsx', 'migration-recipes.tsx'],
+  ['type-tests/public-contracts.ts', 'public-contracts.ts'],
+];
+const removedDeclarationNames = [
+  'useFormControlProps',
+  'useFormValidationError',
+  'useFormValidationState',
+  'useFormValidationStatus',
 ];
 
 const run = (command, args, cwd) => {
@@ -74,6 +100,7 @@ try {
   await mkdir(consumerDirectory, { recursive: true });
 
   const tarballs = new Map();
+  const verificationData = {};
 
   for (const packageDefinition of packages) {
     const packageDirectory = path.join(repositoryRoot, packageDefinition.directory);
@@ -115,6 +142,36 @@ try {
       expectedPackageFiles,
       `${manifest.name} tarball must contain only the declared public entry point and package docs`,
     );
+    const declaration = await readFile(path.join(packageDirectory, 'dist/index.d.ts'), 'utf8');
+    const declarationExports = [...declaration.matchAll(/export \{ ([^}]+) \};/g)]
+      .flatMap(([, names]) => names.split(', '))
+      .sort();
+    assert.deepEqual(
+      declarationExports,
+      [...packageDefinition.declarationExports].sort(),
+      `${manifest.name} declarations must expose exactly the final package-root contract`,
+    );
+    for (const removedName of removedDeclarationNames) {
+      assert.equal(
+        declaration.includes(removedName),
+        false,
+        `${manifest.name} declarations must not contain removed public name ${removedName}`,
+      );
+    }
+
+    const bundleFiles = ['dist/index.cjs', 'dist/index.js'];
+    verificationData[manifest.name] = {
+      bundleBytes: Object.fromEntries(
+        await Promise.all(
+          bundleFiles.map(async (filePath) => [
+            filePath,
+            (await stat(path.join(packageDirectory, filePath))).size,
+          ]),
+        ),
+      ),
+      peerDependencyCount: Object.keys(manifest.peerDependencies ?? {}).length,
+      runtimeDependencyCount: Object.keys(manifest.dependencies ?? {}).length,
+    };
     tarballs.set(manifest.name, path.join(tarballDirectory, packResult.filename));
   }
 
@@ -164,16 +221,31 @@ try {
       copyFile(path.join(fixtureDirectory, fixtureFile), path.join(consumerDirectory, fixtureFile)),
     ),
   );
+  await Promise.all(
+    repositoryFixtures.map(([source, destination]) =>
+      copyFile(path.join(repositoryRoot, source), path.join(consumerDirectory, destination)),
+    ),
+  );
   run(process.execPath, ['esm-smoke.mjs'], consumerDirectory);
   run(process.execPath, ['commonjs-smoke.cjs'], consumerDirectory);
+  run(process.execPath, ['migration-core-recipe.mjs'], consumerDirectory);
 
   const typeScriptCompiler = path.join(repositoryRoot, 'node_modules/typescript/bin/tsc');
   run(process.execPath, [typeScriptCompiler, '-p', 'tsconfig.nodenext.json'], consumerDirectory);
   run(process.execPath, [typeScriptCompiler, '-p', 'tsconfig.bundler.json'], consumerDirectory);
+  run(
+    process.execPath,
+    [typeScriptCompiler, '-p', 'tsconfig.documentation.json'],
+    consumerDirectory,
+  );
 
   run(process.execPath, ['react-contract.mjs'], consumerDirectory);
 
-  process.stdout.write('Packed package consumer checks passed.\n');
+  process.stdout.write(
+    `Packed package consumer checks passed.\nVerification data (diagnostic only): ${JSON.stringify(
+      verificationData,
+    )}\n`,
+  );
 } finally {
   assert.equal(path.dirname(path.resolve(temporaryRoot)), path.resolve(temporaryBase));
   assert.ok(path.basename(temporaryRoot).startsWith('packed-consumers-'));

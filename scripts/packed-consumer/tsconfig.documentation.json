@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noEmit": true,
@@ -7,5 +8,5 @@
     "strict": true,
     "target": "ES2022"
   },
-  "files": ["consumer-contract.ts", "public-contracts.ts"]
+  "files": ["documentation-recipes.tsx", "migration-recipes.tsx"]
 }
