@@ -2,7 +2,7 @@ export { useForm } from './hooks/useForm';
 export {
   useFormValidation,
   useFormValidationError,
-  useFormValidationState,
+  useFormValidationStatus,
 } from './hooks/useFormValidation';
 export { useFormWatch } from './hooks/useFormWatch';
 export { createFormComponent, useFormControlProps } from './createFormComponent';

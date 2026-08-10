@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react';
 import cn from 'clsx';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { PanInput } from '../common/PanInput.tsx';
 import { useForm, useFormValidation } from '@avinlab/react-form';
 import ExpiryInput from '../common/ExpiryInput.tsx';
@@ -28,7 +28,7 @@ export function CardForm() {
     cvc: '',
   });
 
-  const { errors, state } = useFormValidation(form, (formValues, prevFormValues) => {
+  const validator = useCallback((formValues: Readonly<CardFormValues>) => {
     const errors: FormValidationErrors<CardFormValues> = {};
 
     const check = (
@@ -46,7 +46,8 @@ export function CardForm() {
     check('cvc', validateCvc, 'Wrong CVC');
 
     return errors;
-  });
+  }, []);
+  const { errors, status } = useFormValidation(form, validator);
 
   console.log(errors);
 
@@ -54,7 +55,7 @@ export function CardForm() {
     e.preventDefault();
     setIsSubmitted(true);
 
-    if (state === 'valid') {
+    if (status === 'valid') {
       alert(JSON.stringify(form.values, null, 2));
     }
   };
@@ -108,7 +109,7 @@ export function CardForm() {
             className={cn(
               'bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full mt-4',
               {
-                'opacity-50': state !== 'valid',
+                'opacity-50': status !== 'valid',
               },
             )}
             type="submit"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useForm, useFormValidation, useFormWatch } from '@avinlab/react-form';
 
 interface DebugFormValues {
@@ -13,20 +13,20 @@ export function DebugForm() {
     name2: 'value2',
   });
 
-  const { errors, state, validate } = useFormValidation(form, (values, prevValues) => {
-    const errors: Record<string, string> = {};
-    if (values.name1.length < minLength) {
-      errors.name1 = 'Name1 is too short';
-    }
-    if (values.name2.length < minLength) {
-      errors.name2 = 'Name2 is too short';
-    }
-    return errors;
-  });
-
-  useEffect(() => {
-    validate();
-  }, [minLength, validate]);
+  const validator = useCallback(
+    (values: Readonly<DebugFormValues>) => {
+      const errors: Record<string, string> = {};
+      if (values.name1.length < minLength) {
+        errors.name1 = 'Name1 is too short';
+      }
+      if (values.name2.length < minLength) {
+        errors.name2 = 'Name2 is too short';
+      }
+      return errors;
+    },
+    [minLength],
+  );
+  const { errors, status } = useFormValidation(form, validator);
 
   // const value1 = useWatch(form, 'name1');
   const value1 = '~';
@@ -39,7 +39,7 @@ export function DebugForm() {
   console.log('render');
 
   const handleSubmit = () => {
-    if (state !== 'valid') {
+    if (status !== 'valid') {
       return;
     }
     console.log(form.values);
@@ -77,7 +77,7 @@ export function DebugForm() {
         </div>
         <div>name2: {value2}</div>
       </div>
-      <div>validation state: {state}</div>
+      <div>validation status: {status}</div>
 
       <div>
         minLength: {minLength}{' '}

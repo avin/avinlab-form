@@ -2,8 +2,7 @@
 
 A form is one stable mutable controller for its lifetime. `values` and `prevValues` are replaceable
 readonly snapshots, so mutating the form does **not** by itself rerender React. Reactivity is opt-in:
-use the narrowest field watcher, whole-form watcher, validation error reader, or state reader
-that renders the data.
+use the narrowest field watcher, whole-form watcher, or validation reader that renders the data.
 
 ## Install
 
@@ -131,17 +130,23 @@ The deterministic render guarantee is selective notification, not a general perf
 one whole-form watcher update per real commit, one selected-field update when that field changes,
 and no watcher update for unrelated fields or no-ops.
 
-## Validation lifecycle and selectors
+## Validation result
 
 Validation remains synchronous. React attaches it only after a render commits; once connected, a
 validator runs against the current snapshot. A different validator function recalculates current
 values during the committed effect. Switching `form` disposes the old derived controller, and
 unmounting releases both validation and form subscriptions.
 
-Use `useFormValidation` when a component intentionally needs the complete validation result. Use
-`useFormValidationError` for one error and `useFormValidationState` for only the lifecycle state,
-so unrelated error changes do not rerender those consumers. Before the committed effect attaches
-the validator, the state is `unvalidated`; only `valid` means validation completed successfully.
+Validator identity defines the validation request. Declare validators outside the component or
+memoize closure-based validators with `useCallback`; a new function requests a new validation.
+
+`useFormValidation` returns only the readonly `{ status, errors }` render snapshot. It does not
+expose the hook-owned controller, mutation methods, subscriptions, or disposal. Initial and server
+renders are unvalidated. A changed form or validator also renders an empty unvalidated result until
+that exact request commits and validates. Only `valid` means validation completed successfully.
+
+`useFormValidationError` reads one error, while `useFormValidationStatus` reads the status using the
+same terminology as the complete result.
 
 ```tsx
 type ProfileErrors = Partial<Record<keyof ProfileValues, string>>;
@@ -151,9 +156,9 @@ const validateProfile = (values: Readonly<ProfileValues>): ProfileErrors => ({
   age: values.age >= 18 ? undefined : 'Must be at least 18',
 });
 
-function CompleteErrors({ form }: { form: Form<ProfileValues> }) {
-  const validation = useFormValidation<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <output>{JSON.stringify(validation.errors)}</output>;
+function Validation({ form }: { form: Form<ProfileValues> }) {
+  const result = useFormValidation<ProfileErrors, ProfileValues>(form, validateProfile);
+  return <output>{JSON.stringify(result)}</output>;
 }
 
 function AgeError({ form }: { form: Form<ProfileValues> }) {
@@ -166,8 +171,8 @@ function AgeError({ form }: { form: Form<ProfileValues> }) {
 }
 
 function Submit({ form }: { form: Form<ProfileValues> }) {
-  const state = useFormValidationState<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <button disabled={state !== 'valid'}>Save</button>;
+  const status = useFormValidationStatus<ProfileErrors, ProfileValues>(form, validateProfile);
+  return <button disabled={status !== 'valid'}>Save</button>;
 }
 ```
 
