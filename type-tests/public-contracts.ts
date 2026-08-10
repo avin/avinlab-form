@@ -75,6 +75,16 @@ const invalidFunctionRefBinding = FormTextInput({
   // @ts-expect-error Ordinary React 18 function components do not support refs.
   ref: inputRef,
 });
+const FunctionWithRefProp = (_props: TextInputProps & React.RefAttributes<HTMLInputElement>) =>
+  null;
+const FormFunctionWithRefProp = ReactForm.createFormComponent(FunctionWithRefProp);
+const invalidRefShapedPropBinding = FormFunctionWithRefProp({
+  form,
+  label: 'Email',
+  name: 'email',
+  // @ts-expect-error A ref-shaped prop does not make a function component ref-capable in React 18.
+  ref: inputRef,
+});
 
 // @ts-expect-error Public snapshots are readonly; updates go through the controller.
 form.values.email = 'next@example.com';
@@ -104,6 +114,7 @@ const invalidBinding = FormTextInput({
 void invalidBinding;
 void invalidDomRefBinding;
 void invalidFunctionRefBinding;
+void invalidRefShapedPropBinding;
 void status;
 void unsupportedStatus;
 void validBinding;
