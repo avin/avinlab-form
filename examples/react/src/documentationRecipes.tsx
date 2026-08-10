@@ -5,7 +5,7 @@ import {
   useForm,
   useFormValidation,
   useFormValidationError,
-  useFormValidationState,
+  useFormValidationStatus,
   useFormWatch,
 } from '@avinlab/react-form';
 
@@ -137,20 +137,20 @@ export function WholeFormWatcher({ form }: { form: Form<ProfileValues> }) {
 }
 
 export function CompleteValidation({ form }: { form: Form<ProfileValues> }) {
-  const validation = useFormValidation<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <output>{JSON.stringify(validation.errors)}</output>;
+  const result = useFormValidation<ProfileErrors, ProfileValues>(form, validateProfile);
+  return <output>{JSON.stringify(result)}</output>;
 }
 
 export function AgeError({ form }: { form: Form<ProfileValues> }) {
-  const ageError = useFormValidationError<ProfileErrors, ProfileValues, 'age'>(
+  const error = useFormValidationError<ProfileErrors, ProfileValues, 'age'>(
     form,
     validateProfile,
     'age',
   );
-  return <output>{ageError}</output>;
+  return <output>{error}</output>;
 }
 
 export function SubmitButton({ form }: { form: Form<ProfileValues> }) {
-  const state = useFormValidationState<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <button disabled={state !== 'valid'}>Save</button>;
+  const status = useFormValidationStatus<ProfileErrors, ProfileValues>(form, validateProfile);
+  return <button disabled={status !== 'valid'}>Save</button>;
 }

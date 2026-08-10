@@ -2,37 +2,51 @@ import { objectsAreEqual } from './utils/objectsAreEqual';
 import type { Form, FormValues } from './createForm';
 
 export type FormErrors = Record<string, any>;
-export type ValidationState = 'unvalidated' | 'valid' | 'invalid';
+export type ValidationStatus = 'unvalidated' | 'valid' | 'invalid';
+
+export interface ValidationResult<TFormErrors extends FormErrors> {
+  readonly status: ValidationStatus;
+  readonly errors: Readonly<TFormErrors>;
+}
 
 export type ValidationFunction<TFormErrors extends FormErrors, TFormValues extends FormValues> = (
   values: Readonly<TFormValues>,
   prevValues: Readonly<TFormValues>,
 ) => TFormErrors;
 
-type ValidateHandler<TFormErrors extends FormErrors> = (errors: Readonly<TFormErrors>) => void;
+type ValidateHandler<TFormErrors extends FormErrors> = (
+  result: ValidationResult<TFormErrors>,
+) => void;
 type Unsubscribe = () => void;
 
 export interface FormValidation<TFormErrors extends FormErrors, TFormValues extends FormValues> {
-  readonly errors: Readonly<TFormErrors>;
-  readonly state: ValidationState;
+  readonly result: ValidationResult<TFormErrors>;
   validate: () => void;
-  /** Configuring a new validator recalculates the current form snapshot synchronously. */
-  setValidation: (validationFunc: ValidationFunction<TFormErrors, TFormValues>) => void;
+  /** Replacing the validator recalculates the current form snapshot synchronously. */
+  setValidator: (validator: ValidationFunction<TFormErrors, TFormValues>) => void;
   subscribe: (cb: ValidateHandler<TFormErrors>) => Unsubscribe;
   dispose: () => void;
 }
+
+const emptyErrors = Object.freeze({});
+const emptyUnvalidatedResult = Object.freeze({
+  status: 'unvalidated' as const,
+  errors: emptyErrors,
+});
+
+const getUnvalidatedResult = <TFormErrors extends FormErrors>() =>
+  emptyUnvalidatedResult as ValidationResult<TFormErrors>;
 
 export const createFormValidation = <
   TFormErrors extends FormErrors,
   TFormValues extends FormValues,
 >(
   form: Form<TFormValues>,
-  validationFunc?: ValidationFunction<TFormErrors, TFormValues>,
+  validator?: ValidationFunction<TFormErrors, TFormValues>,
 ): FormValidation<TFormErrors, TFormValues> => {
   const validateHandlers = new Set<ValidateHandler<TFormErrors>>();
-  let errors = Object.freeze({}) as Readonly<TFormErrors>;
-  let state: ValidationState = 'unvalidated';
-  let _validationFunc: ValidationFunction<TFormErrors, TFormValues> | null = null;
+  let result = getUnvalidatedResult<TFormErrors>();
+  let currentValidator: ValidationFunction<TFormErrors, TFormValues> | null = null;
   let isDisposed = false;
   let unsubscribeForm: Unsubscribe = () => {};
 
@@ -53,43 +67,47 @@ export const createFormValidation = <
     return normalizeErrors(returnedErrors);
   };
 
-  const publishValidationResult = (newErrors: Readonly<TFormErrors>) => {
-    const shouldUpdateErrors = !objectsAreEqual(newErrors, errors);
-    const nextState = Object.keys(newErrors).length ? 'invalid' : 'valid';
-    const shouldUpdateState = state !== nextState;
-
-    if (shouldUpdateErrors || shouldUpdateState) {
-      if (shouldUpdateErrors) {
-        errors = newErrors;
-      }
-
-      state = nextState;
-
-      [...validateHandlers].forEach((cb) => {
-        cb(errors);
-      });
+  const publish = (nextResult: ValidationResult<TFormErrors>) => {
+    if (result.status === nextResult.status && objectsAreEqual(result.errors, nextResult.errors)) {
+      return;
     }
+
+    result = nextResult;
+    [...validateHandlers].forEach((cb) => cb(result));
+  };
+
+  const publishErrors = (errors: Readonly<TFormErrors>) => {
+    publish(
+      Object.freeze({
+        status: Object.keys(errors).length ? 'invalid' : 'valid',
+        errors,
+      }),
+    );
   };
 
   const validate = () => {
-    if (!isDisposed && _validationFunc) {
-      publishValidationResult(calculateErrors(_validationFunc));
+    if (isDisposed || !currentValidator) {
+      return;
     }
+
+    let errors: Readonly<TFormErrors>;
+    try {
+      errors = calculateErrors(currentValidator);
+    } catch (error) {
+      publish(getUnvalidatedResult<TFormErrors>());
+      throw error;
+    }
+
+    publishErrors(errors);
   };
 
-  const setValidation = (validationFunction: ValidationFunction<TFormErrors, TFormValues>) => {
-    if (isDisposed || _validationFunc === validationFunction) {
+  const setValidator = (nextValidator: ValidationFunction<TFormErrors, TFormValues>) => {
+    if (isDisposed || currentValidator === nextValidator) {
       return;
     }
 
-    const newErrors = calculateErrors(validationFunction);
-
-    if (isDisposed) {
-      return;
-    }
-
-    _validationFunc = validationFunction;
-    publishValidationResult(newErrors);
+    currentValidator = nextValidator;
+    validate();
   };
 
   const subscribe = (cb: ValidateHandler<TFormErrors>) => {
@@ -112,25 +130,22 @@ export const createFormValidation = <
     isDisposed = true;
     unsubscribeForm();
     validateHandlers.clear();
-    _validationFunc = null;
+    currentValidator = null;
   };
 
-  if (validationFunc) {
-    setValidation(validationFunc);
+  if (validator) {
+    setValidator(validator);
   }
 
   unsubscribeForm = form.subscribe(validate);
 
   return {
     validate,
-    setValidation,
+    setValidator,
     subscribe,
     dispose,
-    get errors() {
-      return errors;
-    },
-    get state() {
-      return state;
+    get result() {
+      return result;
     },
   };
 };

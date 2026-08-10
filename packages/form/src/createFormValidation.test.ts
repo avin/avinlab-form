@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, expectTypeOf, vi } from 'vitest';
-import type { Form, FormValidation, ValidationState } from './index';
+import { beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import type { Form, FormValidation, ValidationResult, ValidationStatus } from './index';
 import { createForm, createFormValidation } from './index';
 
 interface FormFields {
@@ -7,222 +7,179 @@ interface FormFields {
   age: number;
 }
 
+interface FormFieldErrors {
+  name?: string;
+  age?: string;
+}
+
 describe('createFormValidation', () => {
-  let form: Form<FormFields>;
-  let formValidation: FormValidation<any, FormFields>;
   const initialValues = { name: 'John', age: 30 };
-  const validationFunction = vi.fn((values) => {
-    const errors: Record<string, any> = {};
-    if (!values.name) {
-      errors.name = 'Name is required';
-    }
-    if (values.age && values.age < 18) {
-      errors.age = 'Must be at least 18';
-    }
-    return errors;
-  });
+  let form: Form<FormFields>;
 
   beforeEach(() => {
     form = createForm(initialValues);
-    formValidation = createFormValidation(form, validationFunction);
   });
 
-  it('exposes an empty readonly snapshot without a validator', () => {
-    const validation = createFormValidation(createForm(initialValues));
+  it('starts with one frozen unvalidated result and empty frozen errors', () => {
+    const validation = createFormValidation<FormFieldErrors, FormFields>(form);
 
-    expect(validation.errors).toEqual({});
-    expect(Object.isFrozen(validation.errors)).toBe(true);
-    expect(validation.state).toBe('unvalidated');
+    expect(validation.result).toEqual({ status: 'unvalidated', errors: {} });
+    expect(Object.isFrozen(validation.result)).toBe(true);
+    expect(Object.isFrozen(validation.result.errors)).toBe(true);
+    expect('errors' in validation).toBe(false);
+    expect('state' in validation).toBe(false);
+    expect('isValid' in validation).toBe(false);
+  });
+
+  it('publishes valid and invalid results for form commits', () => {
+    const validation = createFormValidation<FormFieldErrors, FormFields>(form, (values) =>
+      values.name ? {} : { name: 'Name is required' },
+    );
+    const listener = vi.fn();
+    validation.subscribe(listener);
+
+    expect(validation.result).toEqual({ status: 'valid', errors: {} });
+
+    form.setValue('name', '');
+
+    expect(validation.result).toEqual({
+      status: 'invalid',
+      errors: { name: 'Name is required' },
+    });
+    expect(listener).toHaveBeenCalledWith(validation.result);
   });
 
   it('normalizes a frozen validator result without mutating it', () => {
-    const returnedErrors = Object.freeze({
-      name: undefined,
-      age: 'Must be at least 18',
-    });
+    const returnedErrors = Object.freeze({ name: undefined, age: 'Must be at least 18' });
+    const validation = createFormValidation(form, () => returnedErrors);
 
-    const validation = createFormValidation(createForm(initialValues), () => returnedErrors);
-
-    expect(validation.errors).toEqual({ age: 'Must be at least 18' });
-    expect(validation.errors).not.toBe(returnedErrors);
-    expect(Object.isFrozen(validation.errors)).toBe(true);
-    expect(returnedErrors).toEqual({
-      name: undefined,
-      age: 'Must be at least 18',
-    });
+    expect(validation.result.errors).toEqual({ age: 'Must be at least 18' });
+    expect(validation.result.errors).not.toBe(returnedErrors);
+    expect(Object.isFrozen(validation.result.errors)).toBe(true);
+    expect(returnedErrors).toEqual({ name: undefined, age: 'Must be at least 18' });
   });
 
-  it('revalidates synchronously when the configured validator changes', () => {
+  it('revalidates current values synchronously when the validator changes', () => {
     const oldValidator = vi.fn(() => ({ name: 'Obsolete error' }));
     const newValidator = vi.fn(() => ({}));
-    const changingForm = createForm(initialValues);
-    const validation = createFormValidation<{ name?: string }, FormFields>(
-      changingForm,
-      oldValidator,
-    );
-    changingForm.setValue('age', 31);
+    const validation = createFormValidation<FormFieldErrors, FormFields>(form, oldValidator);
+    form.setValue('age', 31);
     const listener = vi.fn();
     validation.subscribe(listener);
 
-    validation.setValidation(newValidator);
+    validation.setValidator(newValidator);
 
-    expect(newValidator).toHaveBeenCalledOnce();
     expect(newValidator).toHaveBeenCalledWith({ ...initialValues, age: 31 }, initialValues);
-    expect(validation.errors).toEqual({});
-    expect(validation.state).toBe('valid');
-    expect(listener).toHaveBeenCalledOnce();
-    expect(listener).toHaveBeenCalledWith(validation.errors);
+    expect(validation.result).toEqual({ status: 'valid', errors: {} });
+    expect(listener).toHaveBeenCalledWith(validation.result);
   });
 
-  it('validates synchronously when a missing validator is configured', () => {
-    const validator = vi.fn(() => ({ name: 'Required' }));
-    const validation = createFormValidation<{ name?: string }, FormFields>(form);
-    const listener = vi.fn();
-    validation.subscribe(listener);
+  it('validates explicitly with the configured validator', () => {
+    const validator = vi.fn(() => ({}));
+    const validation = createFormValidation<FormFieldErrors, FormFields>(form);
 
-    validation.setValidation(validator);
+    validation.setValidator(validator);
+    validation.validate();
 
-    expect(validator).toHaveBeenCalledOnce();
-    expect(validator).toHaveBeenCalledWith(initialValues, initialValues);
-    expect(validation.errors).toEqual({ name: 'Required' });
-    expect(validation.state).toBe('invalid');
-    expect(listener).toHaveBeenCalledOnce();
+    expect(validator).toHaveBeenCalledTimes(2);
   });
 
-  it('publishes the first successful validation when only the state changes', () => {
-    const validation = createFormValidation<Record<string, never>, FormFields>(form);
-    const initialErrors = validation.errors;
-    const listener = vi.fn();
-    validation.subscribe(listener);
-
-    validation.setValidation(() => ({}));
-
-    expect(validation.state).toBe('valid');
-    expect(validation.errors).toBe(initialErrors);
-    expect(listener).toHaveBeenCalledOnce();
-    expect(listener).toHaveBeenCalledWith(initialErrors);
-  });
-
-  it('leaves an unvalidated controller unchanged when validate has no validator', () => {
-    const validation = createFormValidation(form);
+  it('does nothing when explicit validation has no validator', () => {
+    const validation = createFormValidation<FormFieldErrors, FormFields>(form);
+    const initialResult = validation.result;
     const listener = vi.fn();
     validation.subscribe(listener);
 
     validation.validate();
 
-    expect(validation.state).toBe('unvalidated');
-    expect(validation.errors).toEqual({});
+    expect(validation.result).toBe(initialResult);
     expect(listener).not.toHaveBeenCalled();
   });
 
-  it('returns an idempotent unsubscribe function from validation subscriptions', () => {
-    const validation = createFormValidation(form, validationFunction);
-    const listener = vi.fn();
-    const unsubscribe = validation.subscribe(listener);
-
-    unsubscribe();
-    unsubscribe();
-    form.setValue('name', '');
-
-    expect(listener).not.toHaveBeenCalled();
-  });
-
-  it('disposes idempotently and stops responding to form commits', () => {
-    const validator = vi.fn((values: FormFields) =>
-      values.name ? {} : { name: 'Name is required' },
-    );
-    const validation = createFormValidation(form, validator);
-    const listener = vi.fn();
-    validation.subscribe(listener);
-
-    validation.dispose();
-    validation.dispose();
-    form.setValue('name', '');
-    validation.validate();
-
-    expect(validator).toHaveBeenCalledOnce();
-    expect(listener).not.toHaveBeenCalled();
-    expect(validation.errors).toEqual({});
-    expect(validation.state).toBe('valid');
-  });
-
-  it('retains the error snapshot and emits no event for equivalent normalized errors', () => {
+  it('retains the complete result and emits no event for equivalent normalized results', () => {
+    const invalidForm = createForm({ name: '', age: 30 });
     const validator = vi.fn((values: FormFields) =>
       values.name ? {} : { name: 'Name is required', ignored: undefined },
     );
-    const invalidForm = createForm({ name: '', age: 30 });
     const validation = createFormValidation(invalidForm, validator);
-    const initialErrors = validation.errors;
+    const initialResult = validation.result;
     const listener = vi.fn();
     validation.subscribe(listener);
 
     invalidForm.setValue('age', 31);
 
-    expect(validator).toHaveBeenCalledTimes(2);
-    expect(validation.errors).toBe(initialErrors);
-    expect(validation.state).toBe('invalid');
+    expect(validation.result).toBe(initialResult);
     expect(listener).not.toHaveBeenCalled();
   });
 
-  it('isolates its snapshot from a shared mutable error object', () => {
-    const sharedErrors: { name?: string } = { name: 'Name is required' };
-    const sharedForm = createForm(initialValues);
-    const validation = createFormValidation(sharedForm, () => sharedErrors);
-    const initialErrors = validation.errors;
-    const listener = vi.fn();
-    validation.subscribe(listener);
+  it('isolates its result from a shared mutable errors object', () => {
+    const sharedErrors: FormFieldErrors = { name: 'Name is required' };
+    const validation = createFormValidation(form, () => sharedErrors);
+    const initialResult = validation.result;
 
     sharedErrors.name = 'Name has changed';
 
-    expect(initialErrors).toEqual({ name: 'Name is required' });
-    sharedForm.setValue('age', 31);
-    expect(validation.errors).toEqual({ name: 'Name has changed' });
-    expect(validation.errors).not.toBe(sharedErrors);
-    expect(listener).toHaveBeenCalledOnce();
+    expect(initialResult.errors).toEqual({ name: 'Name is required' });
+    form.setValue('age', 31);
+    expect(validation.result.errors).toEqual({ name: 'Name has changed' });
   });
 
-  it('keeps the previous validation snapshot when validation throws', () => {
+  it('publishes an empty unvalidated result before a validator exception propagates', () => {
     const failure = new Error('validation failed');
     const throwingValidator = vi.fn((values: FormFields) => {
-      if (values.age === 31) {
-        throw failure;
-      }
-
+      if (values.age === 31) throw failure;
       return { name: 'Existing error' };
     });
-    const throwingForm = createForm(initialValues);
-    const validation = createFormValidation(throwingForm, throwingValidator);
-    const initialErrors = validation.errors;
+    const validation = createFormValidation(form, throwingValidator);
     const listener = vi.fn();
     validation.subscribe(listener);
 
-    expect(() => throwingForm.setValue('age', 31)).toThrow(failure);
-    expect(throwingForm.values.age).toBe(31);
-    expect(validation.errors).toBe(initialErrors);
-    expect(validation.state).toBe('invalid');
-    expect(listener).not.toHaveBeenCalled();
+    expect(() => form.setValue('age', 31)).toThrow(failure);
+
+    expect(validation.result).toEqual({ status: 'unvalidated', errors: {} });
+    expect(listener).toHaveBeenCalledWith(validation.result);
   });
 
   it('does not retain a form subscription when initial validation throws', () => {
     const failure = new Error('initial validation failed');
-    const throwingForm = createForm(initialValues);
     const validator = vi.fn(() => {
       throw failure;
     });
 
-    expect(() => createFormValidation(throwingForm, validator)).toThrow(failure);
-    expect(() => throwingForm.setValue('age', 31)).not.toThrow();
+    expect(() => createFormValidation(form, validator)).toThrow(failure);
+    expect(() => form.setValue('age', 31)).not.toThrow();
     expect(validator).toHaveBeenCalledOnce();
   });
 
-  it('preserves readonly form and concrete error snapshots in listener types', () => {
-    interface SpecificErrors {
-      name?: 'required';
-      code?: number;
-    }
+  it('returns an idempotent unsubscribe function', () => {
+    const validation = createFormValidation(form, () => ({}));
+    const listener = vi.fn();
+    const unsubscribe = validation.subscribe(listener);
 
-    const validation = createFormValidation<SpecificErrors, FormFields>(
-      createForm(initialValues),
+    unsubscribe();
+    unsubscribe();
+    form.setValue('name', 'Jane');
+
+    expect(listener).not.toHaveBeenCalled();
+  });
+
+  it('disposes idempotently and stops observing form commits', () => {
+    const validator = vi.fn(() => ({}));
+    const validation = createFormValidation(form, validator);
+    const retainedResult = validation.result;
+
+    validation.dispose();
+    validation.dispose();
+    form.setValue('name', 'Jane');
+    validation.validate();
+
+    expect(validator).toHaveBeenCalledOnce();
+    expect(validation.result).toBe(retainedResult);
+  });
+
+  it('preserves readonly form, result, and concrete error types', () => {
+    const validation: FormValidation<FormFieldErrors, FormFields> = createFormValidation(
+      form,
       (values, prevValues) => {
         expectTypeOf(values).toEqualTypeOf<Readonly<FormFields>>();
         expectTypeOf(prevValues).toEqualTypeOf<Readonly<FormFields>>();
@@ -230,51 +187,10 @@ describe('createFormValidation', () => {
       },
     );
 
-    validation.subscribe((errors) => {
-      expectTypeOf(errors).toEqualTypeOf<Readonly<SpecificErrors>>();
+    validation.subscribe((result) => {
+      expectTypeOf(result).toEqualTypeOf<ValidationResult<FormFieldErrors>>();
     });
-    expectTypeOf(validation.errors).toEqualTypeOf<Readonly<SpecificErrors>>();
-    expectTypeOf(validation.state).toEqualTypeOf<ValidationState>();
-  });
-
-  it('should initialize without errors and with a valid state after validation', () => {
-    expect(formValidation.errors).toEqual({});
-    expect(formValidation.state).toBe('valid');
-  });
-
-  it('should validate with new values and update errors and validity', () => {
-    form.setValue('name', ''); // This should trigger an error
-    expect(validationFunction).toHaveBeenCalledWith({ ...initialValues, name: '' }, initialValues);
-    expect(formValidation.errors).toEqual({ name: 'Name is required' });
-    expect(formValidation.state).toBe('invalid');
-  });
-
-  it('should call validation handlers with errors', () => {
-    const listener = vi.fn();
-    formValidation.subscribe(listener);
-    form.setValue('age', 17); // This should trigger an error
-
-    expect(listener).toHaveBeenCalledWith({
-      age: 'Must be at least 18',
-    });
-    expect(formValidation.errors).toEqual({ age: 'Must be at least 18' });
-  });
-
-  it('should not call validation handlers if errors did not change', () => {
-    const listener = vi.fn();
-    formValidation.subscribe(listener);
-    // Setting value without changing the error state
-    form.setValue('age', 20);
-
-    expect(listener).not.toHaveBeenCalled(); // Should not be called since errors did not change
-  });
-
-  it('should remove validation handlers correctly', () => {
-    const listener = vi.fn();
-    const unsubscribe = formValidation.subscribe(listener);
-    unsubscribe();
-    form.setValue('name', ''); // This should normally trigger an error
-
-    expect(listener).not.toHaveBeenCalled();
+    expectTypeOf(validation.result).toEqualTypeOf<ValidationResult<FormFieldErrors>>();
+    expectTypeOf(validation.result.status).toEqualTypeOf<ValidationStatus>();
   });
 });

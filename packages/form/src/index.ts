@@ -6,5 +6,6 @@ export type {
   FormValidation,
   ValidationFunction,
   FormErrors,
-  ValidationState,
+  ValidationResult,
+  ValidationStatus,
 } from './createFormValidation';

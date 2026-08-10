@@ -56,13 +56,13 @@ commits retain the exact same controller object.
 
 ## Synchronous validation
 
-`createFormValidation` derives one readonly error snapshot from the form. A validator runs
+`createFormValidation` derives one readonly validation result from the form. A validator runs
 synchronously when configured, after each successful form commit, when replaced with a different
 validator, or when `validate()` is called. It receives the committed `values` and `prevValues`.
 The returned object is copied, top-level `undefined` entries are omitted, and the caller's object is
-never mutated. `state` is `unvalidated` before any validator completes, `valid` for an empty
-normalized result, and `invalid` otherwise. Subscribers are notified when either errors or state
-changes; equivalent errors in the same state preserve their snapshot reference and do not notify.
+never mutated. `status` is `unvalidated` before any validator completes, `valid` for an empty
+normalized result, and `invalid` otherwise. Subscribers receive the complete `{ status, errors }`
+result. Equivalent complete results preserve their reference and do not notify.
 
 ```ts
 import { createForm, createFormValidation } from '@avinlab/form';
@@ -79,10 +79,10 @@ const validation = createFormValidation<Errors, Values>(form, (values) => ({
   age: values.age >= 18 ? undefined : 'Must be at least 18',
 }));
 
-const unsubscribe = validation.subscribe((errors) => console.log(errors));
+const unsubscribe = validation.subscribe((result) => console.log(result));
 form.setValue('age', 15); // validation completes before setValue returns
 
-validation.setValidation((values) => ({
+validation.setValidator((values) => ({
   age: values.age >= 21 ? undefined : 'Must be at least 21',
 })); // recalculates the current snapshot synchronously
 
@@ -90,10 +90,11 @@ unsubscribe();
 validation.dispose(); // idempotent; releases the form subscription and listeners
 ```
 
-Without a validator, `errors` is an empty readonly object and `state` is `unvalidated`. Only
-`state === 'valid'` means validation completed successfully. Disposal is explicit and idempotent;
-a disposed validation controller retains its final errors and state and no longer reacts to form
-commits.
+Without a validator, `result` is `{ status: 'unvalidated', errors: {} }`; both the result and its
+empty errors object are readonly. Only `result.status === 'valid'` means validation completed
+successfully. If a validator throws, the controller publishes that empty unvalidated result before
+propagating the exception. Disposal is explicit and idempotent; a disposed validation controller
+retains its final result and no longer reacts to form commits.
 
 The complete, strictly compiled controller and validation recipe lives in
 [`examples/react/src/documentationRecipes.tsx`](../../examples/react/src/documentationRecipes.tsx).
