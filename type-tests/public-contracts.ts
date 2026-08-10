@@ -1,6 +1,7 @@
 import { createForm, createFormValidation } from '@avinlab/form';
 import type { ValidationResult, ValidationStatus } from '@avinlab/form';
 import * as ReactForm from '@avinlab/react-form';
+import React from 'react';
 
 interface TextInputProps {
   label: string;
@@ -20,6 +21,59 @@ const validBinding = FormTextInput({
   form,
   label: 'Email',
   name: 'email',
+});
+
+const RefTextInput = React.forwardRef<HTMLInputElement, TextInputProps>(() => null);
+const FormRefTextInput = ReactForm.createFormComponent(RefTextInput);
+const inputRef = React.createRef<HTMLInputElement>();
+const validRefBinding = FormRefTextInput({
+  form,
+  label: 'Email',
+  name: 'email',
+  ref: inputRef,
+});
+inputRef.current?.focus();
+inputRef.current?.select();
+
+interface TextInputHandle {
+  selectText: () => void;
+}
+
+const ImperativeTextInput = React.forwardRef<TextInputHandle, TextInputProps>(() => null);
+const FormImperativeTextInput = ReactForm.createFormComponent(ImperativeTextInput);
+const handleRef = React.createRef<TextInputHandle>();
+const validHandleBinding = FormImperativeTextInput({
+  form,
+  label: 'Email',
+  name: 'email',
+  ref: handleRef,
+});
+handleRef.current?.selectText();
+
+class ClassTextInput extends React.Component<TextInputProps> {}
+
+const FormClassTextInput = ReactForm.createFormComponent(ClassTextInput);
+const classRef = React.createRef<ClassTextInput>();
+const validClassBinding = FormClassTextInput({
+  form,
+  label: 'Email',
+  name: 'email',
+  ref: classRef,
+});
+
+const invalidDomRefBinding = FormRefTextInput({
+  form,
+  label: 'Email',
+  name: 'email',
+  // @ts-expect-error The generated component preserves the wrapped input's precise ref target.
+  ref: React.createRef<HTMLButtonElement>(),
+});
+const invalidFunctionRefBinding = FormTextInput({
+  form,
+  label: 'Email',
+  name: 'email',
+  // @ts-expect-error Ordinary React 18 function components do not support refs.
+  ref: inputRef,
 });
 
 // @ts-expect-error Public snapshots are readonly; updates go through the controller.
@@ -48,9 +102,14 @@ const invalidBinding = FormTextInput({
 });
 
 void invalidBinding;
+void invalidDomRefBinding;
+void invalidFunctionRefBinding;
 void status;
 void unsupportedStatus;
 void validBinding;
+void validClassBinding;
+void validHandleBinding;
+void validRefBinding;
 // @ts-expect-error The lifecycle-state reader was replaced by status terminology.
 ReactForm.useFormValidationState;
 // @ts-expect-error Selective error readers are not part of the public React validation workflow.

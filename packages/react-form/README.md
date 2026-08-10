@@ -112,6 +112,10 @@ function ControlledProfileForm() {
 defaults to the first change-handler argument. A configured `getValue` receives every argument from
 the change handler, so controls such as `onChange(event, selectedValue)` can extract a later value.
 
+When the wrapped component supports refs through `React.forwardRef` or a class instance, the
+generated component forwards the same precisely typed ref. Ordinary React 18 function components
+remain valid wrapped controls, but their generated components do not accept a `ref` prop.
+
 ## Field and whole-form watchers
 
 Keep subscriptions next to the output that needs them:

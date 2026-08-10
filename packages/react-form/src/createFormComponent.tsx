@@ -72,6 +72,7 @@ type CompatibleFieldName<
 
 type FormComponentProps<
   TFormValues extends FormValues,
+  TComponent extends ComponentType<any>,
   TProps extends object,
   TValueAttrName extends keyof TProps = DefaultKey<TProps, 'value'>,
   TOnChangeAttrName extends keyof TProps = DefaultKey<TProps, 'onChange'>,
@@ -79,46 +80,61 @@ type FormComponentProps<
 > = {
   form: Form<TFormValues>;
   name: CompatibleFieldName<TFormValues, TProps, TValueAttrName, TExtractedValue>;
-} & Omit<TProps, 'form' | 'name' | TValueAttrName | TOnChangeAttrName>;
+} & Omit<TProps, 'form' | 'name' | 'ref' | TValueAttrName | TOnChangeAttrName> &
+  ('ref' extends keyof React.ComponentPropsWithRef<TComponent>
+    ? Pick<React.ComponentPropsWithRef<TComponent>, 'ref'>
+    : {});
 
 type FormComponent<
+  TComponent extends ComponentType<any>,
   TProps extends object,
   TValueAttrName extends keyof TProps,
   TOnChangeAttrName extends keyof TProps,
   TExtractedValue,
-> = <TFormValues extends FormValues>(
-  props: FormComponentProps<
-    TFormValues,
-    TProps,
-    TValueAttrName,
-    TOnChangeAttrName,
-    TExtractedValue
-  >,
-) => React.ReactElement;
+> = {
+  <TFormValues extends FormValues>(
+    props: FormComponentProps<
+      TFormValues,
+      TComponent,
+      TProps,
+      TValueAttrName,
+      TOnChangeAttrName,
+      TExtractedValue
+    >,
+  ): React.ReactElement;
+  displayName?: string;
+};
 
 export function createFormComponent<
   TProps extends object,
   TValueAttrName extends StringKeyOf<TProps> = DefaultKey<TProps, 'value'>,
   TOnChangeAttrName extends StringKeyOf<TProps> = DefaultKey<TProps, 'onChange'>,
   TExtractedValue = ChangeEvent<TProps, TOnChangeAttrName>,
+  TComponent extends ComponentType<TProps> = ComponentType<TProps>,
 >(
-  Component: ComponentType<TProps>,
+  Component: TComponent & ComponentType<TProps>,
   options?: FormComponentOptions<TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue>,
-): FormComponent<TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue>;
+): FormComponent<TComponent, TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue>;
 export function createFormComponent(
   Component: ComponentType<any>,
   options: Partial<RuntimeFormComponentOptions> = {},
-) {
+): any {
   const valueAttrName = options.valueAttrName ?? 'value';
   const onChangeAttrName = options.onChangeAttrName ?? 'onChange';
 
-  return function FormComponent({ form, name, ...rest }: any) {
+  const FormComponent = React.forwardRef<any, any>(({ form, name, ...rest }, ref) => {
     const formControlProps = useFormControlProps(form, name, {
       valueAttrName,
       onChangeAttrName,
       getValue: options.getValue,
     });
 
-    return <Component {...rest} {...formControlProps} name={name} />;
-  };
+    return <Component {...rest} {...formControlProps} name={name} ref={ref} />;
+  });
+
+  FormComponent.displayName = `FormComponent(${
+    Component.displayName ?? Component.name ?? 'Component'
+  })`;
+
+  return FormComponent;
 }
