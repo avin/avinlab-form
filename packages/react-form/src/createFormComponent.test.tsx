@@ -352,6 +352,8 @@ describe('createFormComponent', () => {
     const ImperativeAmountInput = React.forwardRef<TextInputHandle, AmountInputProps>(() => null);
     const FunctionWithRefProp = (_props: TextInputProps & React.RefAttributes<HTMLInputElement>) =>
       null;
+    const MemoFunctionWithRefProp = React.memo(FunctionWithRefProp);
+    const LazyFunctionWithRefProp = React.lazy(async () => ({ default: FunctionWithRefProp }));
     class ClassTextInput extends React.Component<TextInputProps> {}
 
     const FormDomTextInput = createFormComponent(RefTextInput);
@@ -364,6 +366,8 @@ describe('createFormComponent', () => {
     const FormClassTextInput = createFormComponent(ClassTextInput);
     const FormFunctionTextInput = createFormComponent(TextInput);
     const FormFunctionWithRefProp = createFormComponent(FunctionWithRefProp);
+    const FormMemoFunctionWithRefProp = createFormComponent(MemoFunctionWithRefProp);
+    const FormLazyFunctionWithRefProp = createFormComponent(LazyFunctionWithRefProp);
     const ExplicitFormTextInput = createFormComponent<TextInputProps>(TextInput);
     const form = createForm({ email: '' });
     const validBindings = [
@@ -427,9 +431,25 @@ describe('createFormComponent', () => {
         name="email"
         label="Function with ref prop"
       />,
+      <FormMemoFunctionWithRefProp
+        key="memo-function-ref-prop"
+        // @ts-expect-error React.memo does not make an ordinary function ref-capable in React 18.
+        ref={React.createRef<HTMLInputElement>()}
+        form={form}
+        name="email"
+        label="Memo function with ref prop"
+      />,
+      <FormLazyFunctionWithRefProp
+        key="lazy-function-ref-prop"
+        // @ts-expect-error React.lazy does not make an ordinary function ref-capable in React 18.
+        ref={React.createRef<HTMLInputElement>()}
+        form={form}
+        name="email"
+        label="Lazy function with ref prop"
+      />,
     ];
 
     expect(validBindings).toHaveLength(5);
-    expect(rejectedBindings).toHaveLength(3);
+    expect(rejectedBindings).toHaveLength(5);
   });
 });
