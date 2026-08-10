@@ -15,6 +15,7 @@ const validation = createFormValidation<{ email?: string }, typeof form.values>(
 );
 const result: ValidationResult<{ email?: string }> = validation.result;
 const status: ValidationStatus = result.status;
+const watchedValues = ReactForm.useFormWatch(form);
 
 const FormTextInput = ReactForm.createFormComponent((_props: TextInputProps) => null);
 const validBinding = FormTextInput({
@@ -108,6 +109,8 @@ const invalidLazyRefShapedPropBinding = FormLazyFunctionWithRefProp({
 form.values.email = 'next@example.com';
 // @ts-expect-error Previous snapshots are readonly too.
 form.prevValues.email = 'previous@example.com';
+// @ts-expect-error Whole-form watchers expose readonly snapshots.
+watchedValues.email = 'changed through a watcher';
 // @ts-expect-error Validation errors are readonly snapshots.
 validation.result.errors.email = 'Changed externally';
 // @ts-expect-error Validation status is readonly on the complete snapshot.

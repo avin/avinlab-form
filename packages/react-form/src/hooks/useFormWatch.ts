@@ -6,7 +6,9 @@ export function useFormWatch<TFormValues extends FormValues, TFieldName extends 
   form: Form<TFormValues>,
   fieldName: TFieldName,
 ): TFormValues[TFieldName];
-export function useFormWatch<TFormValues extends FormValues>(form: Form<TFormValues>): TFormValues;
+export function useFormWatch<TFormValues extends FormValues>(
+  form: Form<TFormValues>,
+): Readonly<TFormValues>;
 
 export function useFormWatch<TFormValues extends FormValues, TFieldName extends keyof TFormValues>(
   form: Form<TFormValues>,
