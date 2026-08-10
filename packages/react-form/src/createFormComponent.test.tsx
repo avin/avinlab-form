@@ -2,7 +2,9 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { createForm } from '@avinlab/form';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { createFormComponent, type FormComponentProps } from './index';
+import * as ReactForm from './index';
+
+const { createFormComponent } = ReactForm;
 
 interface TextInputProps {
   label: string;
@@ -43,6 +45,10 @@ const AmountInput = ({ amount, label, onAmountChange }: AmountInputProps) => (
 );
 
 describe('createFormComponent', () => {
+  it('is the only public generated-control abstraction', () => {
+    expect('useFormControlProps' in ReactForm).toBe(false);
+  });
+
   it('binds a text control to one field without rerendering for unrelated changes', () => {
     const renderSpy = vi.fn();
     const TrackedTextInput = (props: TextInputProps) => {
@@ -151,22 +157,6 @@ describe('createFormComponent', () => {
       getValue: (event) => Number(event.next),
     });
     const form = createForm({ accepted: false, email: '', total: 0 });
-    const defaultPublicProps: FormComponentProps<{ email: string }, TextInputProps> = {
-      form: createForm({ email: '' }),
-      name: 'email',
-      label: 'Email',
-    };
-    const customPublicProps: FormComponentProps<
-      { total: number },
-      AmountInputProps,
-      'amount',
-      'onAmountChange',
-      number
-    > = {
-      form: createForm({ total: 0 }),
-      name: 'total',
-      label: 'Amount',
-    };
     const validBindings = [
       <FormTextInput key="text" form={form} name="email" label="Email" />,
       <FormToggle key="toggle" form={form} name="accepted" label="Accepted" />,
@@ -214,7 +204,5 @@ describe('createFormComponent', () => {
 
     expect(validBindings).toHaveLength(4);
     expect(rejectedBindings).toHaveLength(7);
-    expect(defaultPublicProps.name).toBe('email');
-    expect(customPublicProps.name).toBe('total');
   });
 });
