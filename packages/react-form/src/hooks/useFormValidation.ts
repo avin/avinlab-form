@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useSyncExternalStore } from 'use-sync-external-store/shim';
+import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import type {
   Form,
   FormValidation,

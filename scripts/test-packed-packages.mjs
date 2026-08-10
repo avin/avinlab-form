@@ -93,10 +93,13 @@ try {
     assert.deepEqual(Object.keys(manifest.exports).sort(), ['.', './package.json']);
 
     if (manifest.name === '@avinlab/react-form') {
-      assert.equal(manifest.peerDependencies.react, '>=17.0.0');
-      assert.equal(manifest.peerDependencies['react-dom'], '>=17.0.0');
+      assert.equal(manifest.peerDependencies.react, '>=18.0.0');
+      assert.equal(manifest.peerDependencies['react-dom'], '>=18.0.0');
       assert.equal(manifest.peerDependenciesMeta['react-dom'].optional, true);
-      assert.equal(manifest.peerDependenciesMeta['react-native'].optional, true);
+      assert.equal(manifest.peerDependencies['react-native'], undefined);
+      assert.equal(manifest.peerDependenciesMeta['react-native'], undefined);
+      assert.equal(manifest.dependencies['use-sync-external-store'], undefined);
+      assert.equal(manifest.devDependencies?.['@types/use-sync-external-store'], undefined);
     }
 
     const packOutput = run(
