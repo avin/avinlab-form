@@ -73,35 +73,9 @@ footer {
   text-decoration: none;
 }
 
-.eyebrow {
-  margin: 0 0 18px;
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
 .page-shell {
   width: min(960px, calc(100% - 40px));
   padding-block: 64px 40px;
-}
-
-.catalog-header {
-  margin-bottom: 34px;
-}
-
-.catalog-header .eyebrow {
-  margin-bottom: 10px;
-}
-
-.catalog-header h1 {
-  margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(36px, 5vw, 56px);
-  font-weight: 400;
-  letter-spacing: -0.04em;
-  line-height: 1;
 }
 
 .filters {
@@ -430,14 +404,6 @@ footer a {
   .page-shell,
   footer {
     width: min(100% - 28px, 1180px);
-  }
-
-  .catalog-header {
-    display: block;
-  }
-
-  .catalog-header h1 {
-    margin-bottom: 14px;
   }
 
   .filter-heading {
