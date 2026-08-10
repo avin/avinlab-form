@@ -70,6 +70,15 @@ type CompatibleFieldName<
     : never;
 }[keyof TFormValues];
 
+type ComponentRefProps<TComponent extends ComponentType<any>> =
+  TComponent extends React.ComponentClass<any>
+    ? Pick<React.ComponentPropsWithRef<TComponent>, 'ref'>
+    : TComponent extends React.NamedExoticComponent<any>
+    ? 'ref' extends keyof React.ComponentPropsWithRef<TComponent>
+      ? Pick<React.ComponentPropsWithRef<TComponent>, 'ref'>
+      : {}
+    : {};
+
 type FormComponentProps<
   TFormValues extends FormValues,
   TComponent extends ComponentType<any>,
@@ -81,9 +90,7 @@ type FormComponentProps<
   form: Form<TFormValues>;
   name: CompatibleFieldName<TFormValues, TProps, TValueAttrName, TExtractedValue>;
 } & Omit<TProps, 'form' | 'name' | 'ref' | TValueAttrName | TOnChangeAttrName> &
-  ('ref' extends keyof React.ComponentPropsWithRef<TComponent>
-    ? Pick<React.ComponentPropsWithRef<TComponent>, 'ref'>
-    : {});
+  ComponentRefProps<TComponent>;
 
 type FormComponent<
   TComponent extends ComponentType<any>,

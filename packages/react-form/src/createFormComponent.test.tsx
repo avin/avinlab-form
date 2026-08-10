@@ -350,6 +350,8 @@ describe('createFormComponent', () => {
 
     const ImperativeTextInput = React.forwardRef<TextInputHandle, TextInputProps>(() => null);
     const ImperativeAmountInput = React.forwardRef<TextInputHandle, AmountInputProps>(() => null);
+    const FunctionWithRefProp = (_props: TextInputProps & React.RefAttributes<HTMLInputElement>) =>
+      null;
     class ClassTextInput extends React.Component<TextInputProps> {}
 
     const FormDomTextInput = createFormComponent(RefTextInput);
@@ -361,6 +363,7 @@ describe('createFormComponent', () => {
     });
     const FormClassTextInput = createFormComponent(ClassTextInput);
     const FormFunctionTextInput = createFormComponent(TextInput);
+    const FormFunctionWithRefProp = createFormComponent(FunctionWithRefProp);
     const ExplicitFormTextInput = createFormComponent<TextInputProps>(TextInput);
     const form = createForm({ email: '' });
     const validBindings = [
@@ -416,9 +419,17 @@ describe('createFormComponent', () => {
         name="email"
         label="Function"
       />,
+      <FormFunctionWithRefProp
+        key="function-ref-prop"
+        // @ts-expect-error A ref-shaped prop does not make a function component ref-capable in React 18.
+        ref={React.createRef<HTMLInputElement>()}
+        form={form}
+        name="email"
+        label="Function with ref prop"
+      />,
     ];
 
     expect(validBindings).toHaveLength(5);
-    expect(rejectedBindings).toHaveLength(2);
+    expect(rejectedBindings).toHaveLength(3);
   });
 });
