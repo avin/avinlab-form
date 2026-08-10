@@ -62,7 +62,9 @@ validator, or when `validate()` is called. It receives the committed `values` an
 The returned object is copied, top-level `undefined` entries are omitted, and the caller's object is
 never mutated. `status` is `unvalidated` before any validator completes, `valid` for an empty
 normalized result, and `invalid` otherwise. Subscribers receive the complete `{ status, errors }`
-result. Equivalent complete results preserve their reference and do not notify.
+result. Complete results are compared by deep structural equality: independently created nested
+objects and arrays with the same contents preserve the existing result reference and do not notify.
+Error structures must be acyclic.
 
 ```ts
 import { createForm, createFormValidation } from '@avinlab/form';
@@ -102,8 +104,8 @@ Strictly compiled controller and validation recipes live in
 ### Advanced validation lifecycle
 
 Core validation subscribes to the supplied form until `dispose()` is called. `setValidator`
-recalculates synchronously, `validate()` explicitly repeats the current validator, and equivalent
-complete results preserve their reference without notifying. A validator exception first publishes
-the shared empty unvalidated result and then rethrows. Subscription cleanup and disposal are
-idempotent; after disposal, validation retains its final result and ignores validation, validator,
-subscription, and form-update requests.
+recalculates synchronously, `validate()` explicitly repeats the current validator, and deeply
+equivalent complete results preserve their reference without notifying. A validator exception first
+publishes the shared empty unvalidated result and then rethrows. Subscription cleanup and disposal
+are idempotent; after disposal, validation retains its final result and ignores validation,
+validator, subscription, and form-update requests.

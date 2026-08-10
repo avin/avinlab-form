@@ -33,7 +33,7 @@ const packages = [
       'createForm',
       'createFormValidation',
     ],
-    dependencies: {},
+    dependencies: { dequal: '^2.0.3' },
     name: '@avinlab/form',
     peerDependencies: {},
     repositoryDirectory: 'packages/form',
@@ -71,7 +71,7 @@ const fixtureFiles = [
 ];
 const exampleDirectory = path.join(repositoryRoot, 'examples/react/src/examples');
 const exampleFixtures = (await readdir(exampleDirectory))
-  .filter((fileName) => fileName.endsWith('.tsx'))
+  .filter((fileName) => fileName.endsWith('.tsx') && !fileName.endsWith('.test.tsx'))
   .map((fileName) => [path.join('examples/react/src/examples', fileName), `example-${fileName}`]);
 const repositoryFixtures = [
   ...exampleFixtures,

@@ -109,7 +109,8 @@ function ControlledProfileForm() {
 ```
 
 `valueAttrName` defaults to `value`, `onChangeAttrName` defaults to `onChange`, and `getValue`
-defaults to the first change-handler argument.
+defaults to the first change-handler argument. A configured `getValue` receives every argument from
+the change handler, so controls such as `onChange(event, selectedValue)` can extract a later value.
 
 ## Field and whole-form watchers
 

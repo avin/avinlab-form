@@ -10,8 +10,8 @@ The latest V5 artifact verification recorded the following production output:
 
 | Package               | ESM bytes | CommonJS bytes | Runtime dependencies | Peer dependencies |
 | --------------------- | --------: | -------------: | -------------------: | ----------------: |
-| `@avinlab/form`       |     7,127 |          8,201 |                    0 |                 0 |
-| `@avinlab/react-form` |     4,446 |          6,328 |                    1 |                 2 |
+| `@avinlab/form`       |     6,470 |          7,569 |                    1 |                 0 |
+| `@avinlab/react-form` |     4,452 |          6,334 |                    1 |                 2 |
 
 `npm run release` only verifies locally produced tarballs. The separate `npm run publish` command
 is the irreversible registry publication step.

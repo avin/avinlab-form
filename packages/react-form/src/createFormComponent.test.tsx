@@ -44,6 +44,18 @@ const AmountInput = ({ amount, label, onAmountChange }: AmountInputProps) => (
   </button>
 );
 
+interface SearchInputProps {
+  label: string;
+  onChange: (event: { source: string }, selectedValue: string) => void;
+  value: string;
+}
+
+const SearchInput = ({ label, onChange, value }: SearchInputProps) => (
+  <button onClick={() => onChange({ source: 'menu' }, 'Ada')} type="button">
+    {label}: {value}
+  </button>
+);
+
 describe('createFormComponent', () => {
   it('is the only public generated-control abstraction', () => {
     expect('useFormControlProps' in ReactForm).toBe(false);
@@ -131,6 +143,19 @@ describe('createFormComponent', () => {
     expect(screen.getByRole('button', { name: 'Amount: 42' })).toBeDefined();
   });
 
+  it('passes every change-handler argument to the value extractor', () => {
+    const FormSearchInput = createFormComponent(SearchInput, {
+      getValue: (_event, selectedValue?: string) => selectedValue ?? 'missing',
+    });
+    const form = createForm({ query: '' });
+
+    render(<FormSearchInput form={form} name="query" label="Search" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Search:' }));
+
+    expect(form.values.query).toBe('Ada');
+    expect(screen.getByRole('button', { name: 'Search: Ada' })).toBeDefined();
+  });
+
   it('exposes type-safe field and configured prop bindings', () => {
     interface FlexibleInputProps {
       current: string | number;
@@ -156,12 +181,25 @@ describe('createFormComponent', () => {
       onChangeAttrName: 'onCurrentChange',
       getValue: (event) => Number(event.next),
     });
+    const FormSearchInput = createFormComponent(SearchInput, {
+      getValue: (event, selectedValue) => {
+        event.source.toUpperCase();
+        selectedValue.toUpperCase();
+        // @ts-expect-error The first argument retains its declared event shape.
+        String(event.missing);
+        // @ts-expect-error The selected value is a string, not `any`.
+        selectedValue.toFixed();
+
+        return selectedValue;
+      },
+    });
     const form = createForm({ accepted: false, email: '', total: 0 });
     const validBindings = [
       <FormTextInput key="text" form={form} name="email" label="Email" />,
       <FormToggle key="toggle" form={form} name="accepted" label="Accepted" />,
       <FormAmountInput key="amount" form={form} name="total" label="Amount" />,
       <FormFlexibleInput key="flexible" form={form} name="total" label="Flexible" />,
+      <FormSearchInput key="search" form={form} name="email" label="Search" />,
     ];
     const rejectedBindings = [
       // @ts-expect-error A boolean field cannot bind to a string value prop and extractor result.
@@ -202,7 +240,7 @@ describe('createFormComponent', () => {
       />,
     ];
 
-    expect(validBindings).toHaveLength(4);
+    expect(validBindings).toHaveLength(5);
     expect(rejectedBindings).toHaveLength(7);
   });
 });

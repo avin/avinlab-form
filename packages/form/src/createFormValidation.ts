@@ -1,4 +1,4 @@
-import { objectsAreEqual } from './utils/objectsAreEqual';
+import { dequal } from 'dequal';
 import type { Form, FormValues } from './createForm';
 
 export type FormErrors = Record<string, any>;
@@ -68,7 +68,7 @@ export const createFormValidation = <
   };
 
   const publish = (nextResult: ValidationResult<TFormErrors>) => {
-    if (result.status === nextResult.status && objectsAreEqual(result.errors, nextResult.errors)) {
+    if (result.status === nextResult.status && dequal(result.errors, nextResult.errors)) {
       return;
     }
 

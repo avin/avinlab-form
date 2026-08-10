@@ -1,3 +1,5 @@
+import { CompleteProfileForm } from './examples/00-CompleteProfileForm';
+import completeProfileFormSource from './examples/00-CompleteProfileForm.tsx?raw';
 import { ControlledField } from './examples/01-ControlledField';
 import controlledFieldSource from './examples/01-ControlledField.tsx?raw';
 import { ConvertDomValue } from './examples/02-ConvertDomValue';
@@ -69,6 +71,16 @@ const sections: ExampleSection[] = [
     title: 'Essentials',
     description: 'The smallest useful forms: one field, one snapshot, one validation result.',
     examples: [
+      {
+        id: 'complete-profile-form',
+        title: 'Complete profile workflow',
+        summary:
+          'Load, edit, validate, submit, handle a server rejection, and reset one complete form.',
+        tags: ['Basics', 'React', 'Validation', 'State sync'],
+        api: ['useForm', 'useFormWatch', 'useFormValidation', 'setValues', 'form.values'],
+        Component: CompleteProfileForm,
+        source: completeProfileFormSource,
+      },
       {
         id: 'controlled-field',
         title: 'Controlled field',
@@ -350,6 +362,7 @@ const sections: ExampleSection[] = [
 ];
 
 const exampleOrder = [
+  'complete-profile-form',
   'controlled-field',
   'convert-dom-value',
   'basic-validation',

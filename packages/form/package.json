@@ -44,6 +44,9 @@
     "test": "vitest",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
+  "dependencies": {
+    "dequal": "^2.0.3"
+  },
   "publishConfig": {
     "access": "public"
   },

@@ -5,12 +5,17 @@ interface Errors {
   quantity?: string;
 }
 
-const form = createForm({ quantity: 1 });
-const validation = createFormValidation<Errors, { quantity: number }>(form, (values) => ({
-  quantity: values.quantity > 0 ? undefined : 'Must be positive',
-}));
+const createControllers = () => {
+  const form = createForm({ quantity: 1 });
+  const validation = createFormValidation<Errors, { quantity: number }>(form, (values) => ({
+    quantity: values.quantity > 0 ? undefined : 'Must be positive',
+  }));
+
+  return { form, validation };
+};
 
 export function CoreValidation() {
+  const [{ form, validation }] = useState(createControllers);
   const [result, setResult] = useState<ValidationResult<Errors>>(validation.result);
 
   useEffect(() => {
