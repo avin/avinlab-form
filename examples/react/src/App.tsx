@@ -22,7 +22,7 @@ export function App() {
     <>
       <header className="site-header" id="top">
         <nav className="topbar" aria-label="Main navigation">
-          <span className="wordmark">@avinlab/form</span>
+          <span className="wordmark">@avinlab/form examples</span>
           <a className="repo-link" href="https://github.com/avin/avinlab-form">
             GitHub ↗
           </a>
@@ -30,13 +30,6 @@ export function App() {
       </header>
 
       <main className="page-shell">
-        <header className="catalog-header">
-          <div>
-            <p className="eyebrow">Practical reference</p>
-            <h1>Examples</h1>
-          </div>
-        </header>
-
         <section className="filters" aria-labelledby="filter-title">
           <div className="filter-heading">
             <div>
