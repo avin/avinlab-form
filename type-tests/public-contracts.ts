@@ -85,6 +85,24 @@ const invalidRefShapedPropBinding = FormFunctionWithRefProp({
   // @ts-expect-error A ref-shaped prop does not make a function component ref-capable in React 18.
   ref: inputRef,
 });
+const FormMemoFunctionWithRefProp = ReactForm.createFormComponent(React.memo(FunctionWithRefProp));
+const invalidMemoRefShapedPropBinding = FormMemoFunctionWithRefProp({
+  form,
+  label: 'Email',
+  name: 'email',
+  // @ts-expect-error React.memo does not make an ordinary function ref-capable in React 18.
+  ref: inputRef,
+});
+const FormLazyFunctionWithRefProp = ReactForm.createFormComponent(
+  React.lazy(async () => ({ default: FunctionWithRefProp })),
+);
+const invalidLazyRefShapedPropBinding = FormLazyFunctionWithRefProp({
+  form,
+  label: 'Email',
+  name: 'email',
+  // @ts-expect-error React.lazy does not make an ordinary function ref-capable in React 18.
+  ref: inputRef,
+});
 
 // @ts-expect-error Public snapshots are readonly; updates go through the controller.
 form.values.email = 'next@example.com';
@@ -114,6 +132,8 @@ const invalidBinding = FormTextInput({
 void invalidBinding;
 void invalidDomRefBinding;
 void invalidFunctionRefBinding;
+void invalidLazyRefShapedPropBinding;
+void invalidMemoRefShapedPropBinding;
 void invalidRefShapedPropBinding;
 void status;
 void unsupportedStatus;

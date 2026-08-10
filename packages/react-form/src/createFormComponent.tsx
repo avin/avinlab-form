@@ -71,12 +71,14 @@ type CompatibleFieldName<
 }[keyof TFormValues];
 
 type ComponentRefProps<TComponent extends ComponentType<any>> =
-  TComponent extends React.ComponentClass<any>
+  TComponent extends React.MemoExoticComponent<infer TWrappedComponent>
+    ? ComponentRefProps<TWrappedComponent>
+    : TComponent extends React.LazyExoticComponent<infer TWrappedComponent>
+    ? ComponentRefProps<TWrappedComponent>
+    : TComponent extends React.ComponentClass<any>
     ? Pick<React.ComponentPropsWithRef<TComponent>, 'ref'>
-    : TComponent extends React.NamedExoticComponent<any>
-    ? 'ref' extends keyof React.ComponentPropsWithRef<TComponent>
-      ? Pick<React.ComponentPropsWithRef<TComponent>, 'ref'>
-      : {}
+    : TComponent extends React.ForwardRefExoticComponent<any>
+    ? Pick<React.ComponentPropsWithRef<TComponent>, 'ref'>
     : {};
 
 type FormComponentProps<
