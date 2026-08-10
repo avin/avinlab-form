@@ -46,27 +46,19 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@avinlab/form": "^0.5.0",
-    "use-sync-external-store": "^1.6.0"
+    "@avinlab/form": "^0.5.0"
   },
   "peerDependencies": {
-    "react": ">=17.0.0",
-    "react-dom": ">=17.0.0",
-    "react-native": "*"
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
   },
   "peerDependenciesMeta": {
     "react-dom": {
-      "optional": true
-    },
-    "react-native": {
       "optional": true
     }
   },
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "98b2452f398fc913cbc6c0fa6a7183e73d9760d7",
-  "devDependencies": {
-    "@types/use-sync-external-store": "^1.5.0"
-  }
+  "gitHead": "98b2452f398fc913cbc6c0fa6a7183e73d9760d7"
 }
