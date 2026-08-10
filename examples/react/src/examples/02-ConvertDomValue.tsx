@@ -14,7 +14,9 @@ export function ConvertDomValue() {
           onChange={(event) => form.setValue('age', event.currentTarget.valueAsNumber || 0)}
         />
       </label>
-      <output>typeof age: {typeof age}</output>
+      <output>
+        age: {age} · typeof age: {typeof age}
+      </output>
     </div>
   );
 }

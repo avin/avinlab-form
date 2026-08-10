@@ -62,7 +62,7 @@ export interface ExampleSection {
   examples: Example[];
 }
 
-export const sections: ExampleSection[] = [
+const sections: ExampleSection[] = [
   {
     id: 'essentials',
     eyebrow: 'Start here',
@@ -73,6 +73,7 @@ export const sections: ExampleSection[] = [
         id: 'controlled-field',
         title: 'Controlled field',
         summary: 'Watch one field and write back through the stable form controller.',
+        tags: ['Basics', 'React', 'Controls'],
         api: ['useForm', 'useFormWatch', 'setValue'],
         Component: ControlledField,
         source: controlledFieldSource,
@@ -82,6 +83,7 @@ export const sections: ExampleSection[] = [
         title: 'Convert DOM values',
         summary:
           'DOM inputs emit strings; convert them at the form boundary to preserve field types.',
+        tags: ['Basics', 'Controls'],
         api: ['useFormWatch', 'setValue'],
         Component: ConvertDomValue,
         source: convertDomValueSource,
@@ -90,6 +92,7 @@ export const sections: ExampleSection[] = [
         id: 'uncontrolled-field',
         title: 'Uncontrolled field',
         summary: 'Write edits without subscribing the owner when live React output is unnecessary.',
+        tags: ['React', 'Controls', 'Performance'],
         api: ['useForm', 'form.values'],
         Component: UncontrolledField,
         source: uncontrolledFieldSource,
@@ -98,6 +101,7 @@ export const sections: ExampleSection[] = [
         id: 'whole-form-snapshot',
         title: 'Watch the whole form',
         summary: 'Subscribe to one atomic readonly snapshot when an output needs several fields.',
+        tags: ['Basics', 'React'],
         api: ['useFormWatch(form)'],
         Component: WholeFormSnapshot,
         source: wholeFormSnapshotSource,
@@ -107,6 +111,7 @@ export const sections: ExampleSection[] = [
         title: 'Reset with setValues',
         summary:
           'Replace the complete snapshot for reset, loading a record, or server synchronization.',
+        tags: ['Basics', 'State sync'],
         api: ['setValues'],
         Component: ReplaceSnapshot,
         source: replaceSnapshotSource,
@@ -115,6 +120,7 @@ export const sections: ExampleSection[] = [
         id: 'basic-validation',
         title: 'Synchronous validation',
         summary: 'Read status and errors from the same atomic validation result.',
+        tags: ['Basics', 'React', 'Validation'],
         api: ['useFormValidation'],
         Component: BasicValidation,
         source: basicValidationSource,
@@ -131,6 +137,7 @@ export const sections: ExampleSection[] = [
         id: 'dynamic-validation-rule',
         title: 'Validator with dependencies',
         summary: 'Memoize a closure-based validator; a changed function means a changed rule.',
+        tags: ['React', 'Validation', 'Advanced'],
         api: ['useCallback', 'useFormValidation'],
         Component: DynamicValidationRule,
         source: dynamicValidationRuleSource,
@@ -139,6 +146,7 @@ export const sections: ExampleSection[] = [
         id: 'share-validation-result',
         title: 'Share one validation result',
         summary: 'Validate once, then pass the complete result to every child that renders it.',
+        tags: ['React', 'Validation', 'Performance'],
         api: ['ValidationResult'],
         Component: ShareValidationResult,
         source: shareValidationResultSource,
@@ -147,6 +155,7 @@ export const sections: ExampleSection[] = [
         id: 'previous-values-validator',
         title: 'Validate a transition',
         summary: 'Validators receive both snapshots when a rule depends on what just changed.',
+        tags: ['Validation', 'Advanced'],
         api: ['ValidationFunction', 'prevValues'],
         Component: PreviousValuesValidator,
         source: previousValuesValidatorSource,
@@ -156,6 +165,7 @@ export const sections: ExampleSection[] = [
         title: 'Generate a bound input',
         summary:
           'Remove repeated controlled binding in a component library with createFormComponent.',
+        tags: ['React', 'Controls'],
         api: ['createFormComponent', 'getValue'],
         Component: GeneratedTextInput,
         source: generatedTextInputSource,
@@ -164,6 +174,7 @@ export const sections: ExampleSection[] = [
         id: 'custom-control-props',
         title: 'Custom value and change props',
         summary: 'Bind controls that use checked/onToggle instead of value/onChange.',
+        tags: ['React', 'Controls', 'Advanced'],
         api: ['valueAttrName', 'onChangeAttrName'],
         Component: CustomControlProps,
         source: customControlPropsSource,
@@ -172,6 +183,7 @@ export const sections: ExampleSection[] = [
         id: 'direct-value-control',
         title: 'Control that emits a value',
         summary: 'Omit getValue when the first callback argument already is the field value.',
+        tags: ['React', 'Controls', 'Advanced'],
         api: ['createFormComponent'],
         Component: DirectValueControl,
         source: directValueControlSource,
@@ -181,6 +193,7 @@ export const sections: ExampleSection[] = [
         title: 'Synchronize external data',
         summary:
           'useForm reads its argument once; explicitly replace values when remote data changes.',
+        tags: ['React', 'State sync'],
         api: ['useEffect', 'setValues'],
         Component: SyncExternalData,
         source: syncExternalDataSource,
@@ -190,6 +203,7 @@ export const sections: ExampleSection[] = [
         title: 'Pass the controller through props',
         summary:
           'The form identity is stable, so it is safe in props, contexts, and dependency lists.',
+        tags: ['Basics', 'React'],
         api: ['Form<T>'],
         Component: ComposeWithFormProp,
         source: composeWithFormPropSource,
@@ -198,6 +212,7 @@ export const sections: ExampleSection[] = [
         id: 'isolated-field-watchers',
         title: 'Isolate field renders',
         summary: 'A selected-field watcher ignores commits to every other field.',
+        tags: ['React', 'Performance'],
         api: ['useFormWatch(form, field)'],
         Component: IsolatedFieldWatchers,
         source: isolatedFieldWatchersSource,
@@ -207,6 +222,7 @@ export const sections: ExampleSection[] = [
         title: 'Read without subscribing',
         summary:
           'Use form.values inside an event handler when the render does not need live updates.',
+        tags: ['React', 'Performance'],
         api: ['form.values'],
         Component: ImperativeRead,
         source: imperativeReadSource,
@@ -223,6 +239,7 @@ export const sections: ExampleSection[] = [
         id: 'field-subscription',
         title: 'Subscribe to one field',
         summary: 'Observe a field imperatively and return the disposer from an effect.',
+        tags: ['Subscriptions', 'Advanced'],
         api: ['subscribeField'],
         Component: FieldSubscription,
         source: fieldSubscriptionSource,
@@ -231,6 +248,7 @@ export const sections: ExampleSection[] = [
         id: 'form-subscription',
         title: 'Subscribe to every commit',
         summary: 'Observe successful whole-form commits for persistence or instrumentation.',
+        tags: ['Subscriptions', 'Advanced'],
         api: ['subscribe'],
         Component: FormSubscription,
         source: formSubscriptionSource,
@@ -239,6 +257,7 @@ export const sections: ExampleSection[] = [
         id: 'previous-snapshot',
         title: 'Compare previous values',
         summary: 'Every successful commit exposes its current and immediately previous snapshots.',
+        tags: ['Subscriptions', 'State sync', 'Advanced'],
         api: ['prevValues', 'subscribe'],
         Component: PreviousSnapshot,
         source: previousSnapshotSource,
@@ -256,6 +275,7 @@ export const sections: ExampleSection[] = [
         id: 'replace-nested-value',
         title: 'Replace nested values',
         summary: 'Snapshots are shallow: replace a nested field reference instead of mutating it.',
+        tags: ['State sync', 'Advanced'],
         api: ['setValue', 'Readonly<T>'],
         Component: ReplaceNestedValue,
         source: replaceNestedValueSource,
@@ -264,6 +284,7 @@ export const sections: ExampleSection[] = [
         id: 'dynamic-field-name',
         title: 'Switch the watched field',
         summary: 'The watcher immediately reads a newly selected field and moves its subscription.',
+        tags: ['React', 'Advanced'],
         api: ['useFormWatch'],
         Component: DynamicFieldName,
         source: dynamicFieldNameSource,
@@ -272,6 +293,7 @@ export const sections: ExampleSection[] = [
         id: 'external-controller',
         title: 'Use a controller created outside React',
         summary: 'Core controllers can live in a service or module and still drive React watchers.',
+        tags: ['Core', 'React'],
         api: ['createForm', 'useFormWatch'],
         Component: ExternalController,
         source: externalControllerSource,
@@ -281,6 +303,7 @@ export const sections: ExampleSection[] = [
         title: 'Validate without React hooks',
         summary:
           'The core validation controller derives and publishes atomic results synchronously.',
+        tags: ['Core', 'Validation'],
         api: ['createFormValidation', 'subscribe', 'dispose'],
         Component: CoreValidation,
         source: coreValidationSource,
@@ -289,6 +312,7 @@ export const sections: ExampleSection[] = [
         id: 'manual-core-validation',
         title: 'Revalidate an external dependency',
         summary: 'Call validate when a non-form value used by a core validator changes.',
+        tags: ['Core', 'Validation', 'Advanced'],
         api: ['validation.validate'],
         Component: ManualCoreValidation,
         source: manualCoreValidationSource,
@@ -297,6 +321,7 @@ export const sections: ExampleSection[] = [
         id: 'replace-core-validator',
         title: 'Replace a core validator',
         summary: 'setValidator immediately recalculates the current snapshot with the new rule.',
+        tags: ['Core', 'Validation', 'Advanced'],
         api: ['validation.setValidator'],
         Component: ReplaceCoreValidator,
         source: replaceCoreValidatorSource,
@@ -305,6 +330,7 @@ export const sections: ExampleSection[] = [
         id: 'no-op-updates',
         title: 'No-op updates do not notify',
         summary: 'Top-level fields use Object.is; assigning the same value causes no commit.',
+        tags: ['Core', 'Performance', 'Advanced'],
         api: ['Object.is', 'subscribe'],
         Component: NoOpUpdates,
         source: noOpUpdatesSource,
@@ -314,6 +340,7 @@ export const sections: ExampleSection[] = [
         title: 'Switch the watched controller',
         summary:
           'A watcher can move between long-lived forms and reads the new snapshot immediately.',
+        tags: ['React', 'State sync', 'Advanced'],
         api: ['useFormWatch'],
         Component: SwitchFormSource,
         source: switchFormSource,
@@ -321,3 +348,55 @@ export const sections: ExampleSection[] = [
     ],
   },
 ];
+
+const exampleOrder = [
+  'controlled-field',
+  'convert-dom-value',
+  'basic-validation',
+  'whole-form-snapshot',
+  'replace-snapshot',
+  'sync-external-data',
+  'compose-with-form-prop',
+  'isolated-field-watchers',
+  'uncontrolled-field',
+  'imperative-read',
+  'generated-text-input',
+  'custom-control-props',
+  'share-validation-result',
+  'dynamic-validation-rule',
+  'direct-value-control',
+  'field-subscription',
+  'form-subscription',
+  'previous-snapshot',
+  'replace-nested-value',
+  'previous-values-validator',
+  'external-controller',
+  'core-validation',
+  'no-op-updates',
+  'dynamic-field-name',
+  'switch-form-source',
+  'manual-core-validation',
+  'replace-core-validator',
+] as const;
+
+const unorderedExamples = sections.flatMap((section) => section.examples);
+
+export const examples = exampleOrder.map((id) => {
+  const example = unorderedExamples.find((item) => item.id === id);
+
+  if (!example) throw new Error(`Unknown example: ${id}`);
+
+  return example;
+});
+
+export const exampleTags = [
+  'Basics',
+  'React',
+  'Validation',
+  'Controls',
+  'State sync',
+  'Performance',
+  'Subscriptions',
+  'Core',
+  'Advanced',
+] as const;

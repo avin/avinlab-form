@@ -4,12 +4,10 @@ An interactive, progressive reference for `@avinlab/form` and `@avinlab/react-fo
 demonstrates one technique and imports its own source with Vite's `?raw` query, so the code shown in
 the browser is exactly the code being executed.
 
-The catalog moves from common to rare cases:
-
-1. controlled and uncontrolled fields, snapshots, reset, and validation;
-2. React composition, generated controls, external synchronization, and render isolation;
-3. field and form subscriptions, cleanup, and previous snapshots;
-4. nested values, dynamic watchers, core controllers, validation lifecycle, and no-op semantics.
+The catalog is one list ordered by practical importance: everyday field binding, validation, and
+synchronization come first; specialized subscriptions and core-controller lifecycle techniques come
+last. Every card has topical tags. Selecting several tags uses intersection matching, so a card must
+have every selected tag to remain visible.
 
 Every runnable example lives in [`src/examples`](./src/examples). Shared code is limited to the
 catalog card and page shell; examples do not depend on one another.

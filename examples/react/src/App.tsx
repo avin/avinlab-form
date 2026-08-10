@@ -1,10 +1,22 @@
+import { useState } from 'react';
 import { ExampleCard } from './components/ExampleCard';
-import { sections } from './examples';
+import { examples, exampleTags } from './examples';
 
-const exampleCount = sections.reduce((count, section) => count + section.examples.length, 0);
+type ExampleTag = (typeof exampleTags)[number];
 
 export function App() {
-  let exampleNumber = 0;
+  const [selectedTags, setSelectedTags] = useState<ExampleTag[]>([]);
+  const visibleExamples = examples
+    .map((example, index) => ({ example, number: index + 1 }))
+    .filter(({ example }) => selectedTags.every((tag) => example.tags.includes(tag)));
+
+  const toggleTag = (tag: ExampleTag) => {
+    setSelectedTags((currentTags) =>
+      currentTags.includes(tag)
+        ? currentTags.filter((currentTag) => currentTag !== tag)
+        : [...currentTags, tag],
+    );
+  };
 
   return (
     <>
@@ -17,42 +29,58 @@ export function App() {
         </nav>
       </header>
 
-      <div className="page-shell">
-        <aside className="section-nav" aria-label="Example sections">
-          <p>On this page</p>
-          {sections.map((section) => (
-            <a key={section.id} href={`#${section.id}`}>
-              {section.title}
-              <span>{section.examples.length}</span>
-            </a>
-          ))}
-        </aside>
+      <main className="page-shell">
+        <header className="catalog-header">
+          <div>
+            <p className="eyebrow">Practical reference</p>
+            <h1>Examples</h1>
+          </div>
+        </header>
 
-        <main>
-          {sections.map((section) => (
-            <section className="example-section" id={section.id} key={section.id}>
-              <header className="section-header">
-                <p className="eyebrow">{section.eyebrow}</p>
-                <h2>{section.title}</h2>
-                <p>{section.description}</p>
-              </header>
+        <section className="filters" aria-labelledby="filter-title">
+          <div className="filter-heading">
+            <div>
+              <h2 id="filter-title">Filter by tags</h2>
+              <p>Select several tags to show examples that have all of them.</p>
+            </div>
+            <output>
+              {visibleExamples.length} of {examples.length}
+            </output>
+          </div>
 
-              <div className="example-grid">
-                {section.examples.map((example) => {
-                  exampleNumber += 1;
-                  return <ExampleCard example={example} number={exampleNumber} key={example.id} />;
-                })}
-              </div>
-            </section>
+          <div className="filter-list">
+            {exampleTags.map((tag) => {
+              const isSelected = selectedTags.includes(tag);
+              const count = examples.filter((example) => example.tags.includes(tag)).length;
+
+              return (
+                <button
+                  aria-pressed={isSelected}
+                  className={isSelected ? 'is-selected' : undefined}
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  type="button"
+                >
+                  {tag} <span>{count}</span>
+                </button>
+              );
+            })}
+            {selectedTags.length > 0 && (
+              <button className="clear-filters" onClick={() => setSelectedTags([])} type="button">
+                Clear
+              </button>
+            )}
+          </div>
+        </section>
+
+        <div className="example-grid">
+          {visibleExamples.map(({ example, number }) => (
+            <ExampleCard example={example} number={number} key={example.id} />
           ))}
-        </main>
-      </div>
+        </div>
+      </main>
 
       <footer>
-        <p>
-          {exampleCount} examples use the package source through Vite aliases, so they exercise the
-          current API.
-        </p>
         <a href="#top">Back to top ↑</a>
       </footer>
     </>
