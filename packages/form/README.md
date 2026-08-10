@@ -96,8 +96,8 @@ successfully. If a validator throws, the controller publishes that empty unvalid
 propagating the exception. Disposal is explicit and idempotent; a disposed validation controller
 retains its final result and no longer reacts to form commits.
 
-The complete, strictly compiled controller and validation recipe lives in
-[`examples/react/src/documentationRecipes.tsx`](../../examples/react/src/documentationRecipes.tsx).
+Strictly compiled controller and validation recipes live in
+[`examples/react/src/examples`](../../examples/react/src/examples).
 
 ### Advanced validation lifecycle
 

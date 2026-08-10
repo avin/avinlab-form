@@ -1,6 +1,16 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { copyFile, lstat, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import {
+  copyFile,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,10 +69,12 @@ const fixtureFiles = [
   'tsconfig.documentation.json',
   'tsconfig.nodenext.json',
 ];
+const exampleDirectory = path.join(repositoryRoot, 'examples/react/src/examples');
+const exampleFixtures = (await readdir(exampleDirectory))
+  .filter((fileName) => fileName.endsWith('.tsx'))
+  .map((fileName) => [path.join('examples/react/src/examples', fileName), `example-${fileName}`]);
 const repositoryFixtures = [
-  ['examples/react/migrationCoreRecipe.mjs', 'migration-core-recipe.mjs'],
-  ['examples/react/src/documentationRecipes.tsx', 'documentation-recipes.tsx'],
-  ['examples/react/src/migrationRecipes.tsx', 'migration-recipes.tsx'],
+  ...exampleFixtures,
   ['type-tests/public-contracts.ts', 'public-contracts.ts'],
 ];
 const removedDeclarationNames = [
@@ -240,8 +252,6 @@ try {
   );
   run(process.execPath, ['esm-smoke.mjs'], consumerDirectory);
   run(process.execPath, ['commonjs-smoke.cjs'], consumerDirectory);
-  run(process.execPath, ['migration-core-recipe.mjs'], consumerDirectory);
-
   const typeScriptCompiler = path.join(repositoryRoot, 'node_modules/typescript/bin/tsc');
   run(process.execPath, [typeScriptCompiler, '-p', 'tsconfig.nodenext.json'], consumerDirectory);
   run(process.execPath, [typeScriptCompiler, '-p', 'tsconfig.bundler.json'], consumerDirectory);

@@ -138,13 +138,9 @@ Validation subscribers now receive `{ status, errors }` atomically. Every `subsc
 at the owning lifecycle boundary, and call `validation.dispose()` for core validation controllers.
 React owns and cleans up controllers created by `useFormValidation`.
 
-## Checked after-migration examples
+## Checked examples
 
-The TypeScript/React after examples are in
-[`examples/react/src/migrationRecipes.tsx`](./examples/react/src/migrationRecipes.tsx) and compile
-against the built package-root declarations with the example workspace's documentation typecheck.
-The core after example in
-[`examples/react/migrationCoreRecipe.mjs`](./examples/react/migrationCoreRecipe.mjs) executes its
-updates, atomic results, and cleanup assertions. Watcher, switching, exception, and React cleanup
-behavior is exercised through the packages' public test suites. Packed-tarball verification is a
-separate release gate.
+The final API is exercised by the small, strictly compiled recipes in
+[`examples/react/src/examples`](./examples/react/src/examples). Migration-sensitive watcher,
+switching, exception, subscription, and React cleanup behavior remains covered by the packages'
+public test suites. Packed-tarball verification is a separate release gate.
