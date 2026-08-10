@@ -12,15 +12,15 @@ type ChangeEvent<TProps, TOnChangeAttrName extends keyof TProps> = NonNullable<
     : never
   : never;
 
-export interface FormInputControlOptions<
+interface FormComponentOptions<
   TProps extends object = Record<string, unknown>,
   TValueAttrName extends StringKeyOf<TProps> = DefaultKey<TProps, 'value'>,
   TOnChangeAttrName extends StringKeyOf<TProps> = DefaultKey<TProps, 'onChange'>,
   TExtractedValue = ChangeEvent<TProps, TOnChangeAttrName>,
 > {
-  valueAttrName: TValueAttrName;
+  valueAttrName?: TValueAttrName;
   getValue?: (event: ChangeEvent<TProps, TOnChangeAttrName>) => TExtractedValue;
-  onChangeAttrName: TOnChangeAttrName;
+  onChangeAttrName?: TOnChangeAttrName;
 }
 
 interface FormControlOptions<
@@ -41,7 +41,7 @@ type FormControlProps<
   TValue,
 > = Record<TValueAttrName, TValue> & Record<TOnChangeAttrName, (event: TEvent) => void>;
 
-export const useFormControlProps = <
+const useFormControlProps = <
   TFormValues extends FormValues,
   TFieldName extends keyof TFormValues,
   TValueAttrName extends string,
@@ -89,7 +89,7 @@ type CompatibleFieldName<
     : never;
 }[keyof TFormValues];
 
-export type FormComponentProps<
+type FormComponentProps<
   TFormValues extends FormValues,
   TProps extends object,
   TValueAttrName extends keyof TProps = DefaultKey<TProps, 'value'>,
@@ -107,9 +107,7 @@ export function createFormComponent<
   TExtractedValue = ChangeEvent<TProps, TOnChangeAttrName>,
 >(
   Component: ComponentType<TProps>,
-  options: Partial<
-    FormInputControlOptions<TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue>
-  > = {},
+  options: FormComponentOptions<TProps, TValueAttrName, TOnChangeAttrName, TExtractedValue> = {},
 ) {
   const valueAttrName = (options.valueAttrName ?? 'value') as TValueAttrName;
   const onChangeAttrName = (options.onChangeAttrName ?? 'onChange') as TOnChangeAttrName;
