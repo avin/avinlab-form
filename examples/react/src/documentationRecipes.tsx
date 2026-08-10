@@ -1,11 +1,14 @@
 import { useEffect, type ChangeEvent, type InputHTMLAttributes } from 'react';
-import { createForm, createFormValidation, type Form } from '@avinlab/form';
+import {
+  createForm,
+  createFormValidation,
+  type Form,
+  type ValidationResult,
+} from '@avinlab/form';
 import {
   createFormComponent,
   useForm,
   useFormValidation,
-  useFormValidationError,
-  useFormValidationStatus,
   useFormWatch,
 } from '@avinlab/react-form';
 
@@ -138,19 +141,18 @@ export function WholeFormWatcher({ form }: { form: Form<ProfileValues> }) {
 
 export function CompleteValidation({ form }: { form: Form<ProfileValues> }) {
   const result = useFormValidation<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <output>{JSON.stringify(result)}</output>;
-}
-
-export function AgeError({ form }: { form: Form<ProfileValues> }) {
-  const error = useFormValidationError<ProfileErrors, ProfileValues, 'age'>(
-    form,
-    validateProfile,
-    'age',
+  return (
+    <>
+      <AgeError result={result} />
+      <SubmitButton result={result} />
+    </>
   );
-  return <output>{error}</output>;
 }
 
-export function SubmitButton({ form }: { form: Form<ProfileValues> }) {
-  const status = useFormValidationStatus<ProfileErrors, ProfileValues>(form, validateProfile);
-  return <button disabled={status !== 'valid'}>Save</button>;
+export function AgeError({ result }: { result: ValidationResult<ProfileErrors> }) {
+  return <output>{result.errors.age}</output>;
+}
+
+export function SubmitButton({ result }: { result: ValidationResult<ProfileErrors> }) {
+  return <button disabled={result.status !== 'valid'}>Save</button>;
 }

@@ -1,7 +1,7 @@
 # React example
 
 This application demonstrates uncontrolled inputs, generated controlled inputs, field and
-whole-form watchers, synchronous validation, and selective validation readers for
+whole-form watchers and one complete synchronous validation result for
 `@avinlab/react-form`.
 
 Every package imported directly by the source is declared in this workspace. The application and

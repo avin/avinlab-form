@@ -53,5 +53,7 @@ void unsupportedStatus;
 void validBinding;
 // @ts-expect-error The lifecycle-state reader was replaced by status terminology.
 ReactForm.useFormValidationState;
-void ReactForm.useFormValidationError;
-void ReactForm.useFormValidationStatus;
+// @ts-expect-error Selective error readers are not part of the public React validation workflow.
+ReactForm.useFormValidationError;
+// @ts-expect-error Selective status readers are not part of the public React validation workflow.
+ReactForm.useFormValidationStatus;
