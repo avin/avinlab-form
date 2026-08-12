@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Avinlab Form'
+  short_description: 'Build forms with the avinlab-form 0.5 API'
+  default_prompt: 'Use $avinlab-form to implement a type-safe form with the current 0.5 core or React API.'
