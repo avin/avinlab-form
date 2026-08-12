@@ -3,6 +3,7 @@
 node_modules/
 .idea
 .vscode
+.scratch/
 
 packages/*/dist
 .tmp/

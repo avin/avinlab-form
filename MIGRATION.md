@@ -144,4 +144,4 @@ React owns and cleans up controllers created by `useFormValidation`.
 The final API is exercised by the small, strictly compiled recipes in
 [`examples/react/src/examples`](./examples/react/src/examples). Migration-sensitive watcher,
 switching, exception, subscription, and React cleanup behavior remains covered by the packages'
-public test suites. Packed-tarball verification is a separate release gate.
+public test suites.
