@@ -1,7 +1,7 @@
 {
   "name": "@avinlab/react-form",
   "type": "module",
-  "version": "0.5.0",
+  "version": "0.5.0-alpha.0",
   "description": "React bindings for @avinlab/form with concurrent-safe selective subscriptions.",
   "author": "Avin Lambrero <avin.github@gmail.com> (https://github.com/avin/)",
   "license": "MIT",
@@ -46,7 +46,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@avinlab/form": "^0.5.0"
+    "@avinlab/form": "^0.5.0-alpha.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
