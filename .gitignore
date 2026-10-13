@@ -8,3 +8,9 @@ node_modules/
 packages/*/dist
 .tmp/
 **/coverage/
+
+packages/*/skills
+packages/*/bin
+docs/node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/

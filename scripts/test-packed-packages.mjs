@@ -50,6 +50,7 @@ const packages = [
 const expectedPackageFiles = [
   'LICENSE',
   'README.md',
+  'bin/avinlab-form.mjs',
   'dist/index.cjs',
   'dist/index.cjs.map',
   'dist/index.d.cts',
@@ -57,6 +58,12 @@ const expectedPackageFiles = [
   'dist/index.js',
   'dist/index.js.map',
   'package.json',
+  'skills/avinlab-form/SKILL.md',
+  'skills/avinlab-form/agents/openai.yaml',
+  'skills/avinlab-form/references/core.md',
+  'skills/avinlab-form/references/generated-controls.md',
+  'skills/avinlab-form/references/react.md',
+  'skills/avinlab-form/references/validation.md',
 ];
 const fixtureFiles = [
   'commonjs-smoke.cjs',
@@ -150,7 +157,7 @@ try {
     });
     assert.equal(manifest.homepage, 'https://github.com/avin/avinlab-form#readme');
     assert.equal(manifest.bugs?.url, 'https://github.com/avin/avinlab-form/issues');
-    assert.deepEqual([...manifest.files].sort(), ['LICENSE', 'README.md', 'dist']);
+    assert.deepEqual([...manifest.files].sort(), ['LICENSE', 'README.md', 'bin', 'dist', 'skills']);
     assert.deepEqual(Object.keys(manifest.exports).sort(), ['.', './package.json']);
     assert.deepEqual(manifest.dependencies ?? {}, packageDefinition.dependencies);
     assert.deepEqual(manifest.peerDependencies ?? {}, packageDefinition.peerDependencies);

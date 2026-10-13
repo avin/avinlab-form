@@ -35,6 +35,8 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
+    "skills",
+    "bin",
     "LICENSE",
     "README.md"
   ],
@@ -42,7 +44,8 @@
     "build": "cross-env MODE=prod tsup",
     "build:dev": "cross-env MODE=dev tsup",
     "test": "vitest",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "prepack": "node ../../scripts/skill/prepare.mjs"
   },
   "dependencies": {
     "dequal": "^2.0.3"
@@ -50,5 +53,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "f7b4c8329726d1d4bdb2c7dd8d9c20b66fd80cdc"
+  "gitHead": "f7b4c8329726d1d4bdb2c7dd8d9c20b66fd80cdc",
+  "bin": {
+    "avinlab-form": "bin/avinlab-form.mjs"
+  }
 }

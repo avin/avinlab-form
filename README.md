@@ -66,9 +66,25 @@ for framework-independent usage and the advanced controller contract.
 an optional convenience; ordinary inputs work directly with `useFormWatch` and `form.setValue`, as
 shown above.
 
+## Documentation
+
+Full documentation, in English and Russian, is at <https://avin.github.io/avinlab-form/>.
+
+## Agent skill
+
+Both packages bundle an `avinlab-form` skill for coding agents (Cursor, Claude Code, and others):
+
+```sh
+npx avinlab-form install-skills
+# Or choose an agent's skill directory:
+npx avinlab-form install-skills --target .claude/skills
+```
+
+The default destination is `.agents/skills`. Installation refuses to overwrite an existing skill.
+
 ## Upgrading
 
-The [V5 migration guide](./MIGRATION.md) maps every removed or renamed form, validation, React, and
+The [V5 migration guide](https://avin.github.io/avinlab-form/reference/migration) maps every removed or renamed form, validation, React, and
 generated-control member to the final interface. Migration history stays there rather than in the
 primary workflow.
 

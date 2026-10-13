@@ -2,7 +2,7 @@
 
 V5 keeps the same central model—a mutable form controller—but makes snapshots readonly,
 subscriptions disposer-based, and validation atomic. This guide contains the release history; the
-[primary README](./README.md) teaches only the final interface.
+[primary README](https://github.com/avin/avinlab-form#readme) teaches only the final interface.
 
 ## Member map
 
@@ -142,6 +142,6 @@ React owns and cleans up controllers created by `useFormValidation`.
 ## Checked examples
 
 The final API is exercised by the small, strictly compiled recipes in
-[`examples/react/src/examples`](./examples/react/src/examples). Migration-sensitive watcher,
+[`examples/react/src/examples`](https://github.com/avin/avinlab-form/tree/master/examples/react/src/examples). Migration-sensitive watcher,
 switching, exception, subscription, and React cleanup behavior remains covered by the packages'
 public test suites.
