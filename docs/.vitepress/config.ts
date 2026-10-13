@@ -57,7 +57,7 @@ const ru = {
 };
 
 export default defineConfig({
-  title: 'avinlab-form',
+  title: '@avinlab/form',
   base: '/avinlab-form/',
   cleanUrls: true,
   lastUpdated: true,

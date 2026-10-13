@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: avinlab-form
+  name: "@avinlab/form"
   text: Небольшие контроллеры форм для TypeScript и React
   tagline: Один стабильный контроллер на форму, неизменяемые снимки значений и подписки ровно той ширины, которая нужна.
   actions:
@@ -30,32 +30,76 @@ features:
 ## Идея за 30 секунд
 
 ```tsx
-import { useCallback } from 'react';
-import { useForm, useFormValidation, useFormWatch } from '@avinlab/react-form';
+import {
+  createFormComponent,
+  useForm,
+  useFormValidation,
+  useFormWatch,
+} from '@avinlab/react-form';
 
-type Values = { name: string };
-type Errors = { name?: string };
+type Values = { email: string; password: string; repeat: string; newsletter: boolean };
+type Errors = Partial<Record<keyof Values, string>>;
 
-export function ProfileForm() {
-  const form = useForm<Values>({ name: '' });
-  const name = useFormWatch(form, 'name');
-  const validate = useCallback(
-    (values: Readonly<Values>): Errors => ({
-      name: values.name ? undefined : 'Name is required',
-    }),
-    [],
-  );
-  const validation = useFormValidation<Errors, Values>(form, validate);
+// Синхронный валидатор. Объявлен вне компонента, поэтому его идентичность стабильна.
+const validate = (values: Readonly<Values>): Errors => ({
+  email: values.email.includes('@') ? undefined : 'Введите корректный email',
+  password: values.password.length >= 8 ? undefined : 'Минимум 8 символов',
+  repeat: values.repeat === values.password ? undefined : 'Пароли не совпадают',
+});
+
+// Необязательно: превращаем любой контролируемый компонент в привязанный к форме.
+const FormInput = createFormComponent(TextInput); // value / onChange(value)
+const FormCheckbox = createFormComponent(Checkbox, {
+  valueAttrName: 'checked',
+  getValue: (event: React.ChangeEvent<HTMLInputElement>) => event.currentTarget.checked,
+});
+
+// Следит только за одним полем: перерисовывается при изменении `password`, но не других полей.
+function PasswordStrength({ form }: { form: Form<Values> }) {
+  const password = useFormWatch(form, 'password');
+  return <output>Надёжность: {password.length >= 12 ? 'высокая' : 'низкая'}</output>;
+}
+
+export function SignupForm() {
+  const form = useForm<Values>({ email: '', password: '', repeat: '', newsletter: false });
+  const { status, errors } = useFormValidation<Errors, Values>(form, validate);
 
   return (
-    <form>
-      <input value={name} onChange={(e) => form.setValue('name', e.currentTarget.value)} />
-      {validation.errors.name && <span>{validation.errors.name}</span>}
-      <button disabled={validation.status !== 'valid'}>Save</button>
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        signUp(form.values); // императивное чтение: без подписки и без перерисовки
+      }}
+    >
+      <FormInput form={form} name="email" label="Email" error={errors.email} />
+      <FormInput form={form} name="password" label="Пароль" error={errors.password} />
+      <FormInput form={form} name="repeat" label="Повтор пароля" error={errors.repeat} />
+      <PasswordStrength form={form} />
+      <FormCheckbox form={form} name="newsletter" label="Присылать новости" />
+
+      {/* setValues заменяет весь снимок: для патча разверните текущие значения */}
+      <button
+        type="button"
+        onClick={() => form.setValues({ ...form.values, password: '', repeat: '' })}
+      >
+        Очистить пароли
+      </button>
+      <button disabled={status !== 'valid'}>Зарегистрироваться</button>
     </form>
   );
 }
 ```
+
+Что дают эти несколько строк:
+
+- `form` — один стабильный контроллер. Поля привязываются один раз через `createFormComponent`, и
+  каждое следит только за своим значением.
+- Валидация — один атомарный результат `{ status, errors }`, и она может смотреть сразу на
+  несколько полей (проверка *повтора*). Кнопка отправки активна только при `status === 'valid'`, а
+  не просто «ошибок пока нет».
+- `createFormComponent` привязывает готовые контролируемые компоненты с полной проверкой типов:
+  тип поля должен совпадать с типом пропа значения.
+- Запись идёт через `setValue` / `setValues`; чтение в обработчиках — обычный `form.values`.
 
 Готовы? Начните с [введения](/ru/guide/introduction) или сразу переходите к
 [быстрому старту](/ru/guide/getting-started).
